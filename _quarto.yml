@@ -1,5 +1,7 @@
 project:
   title: "AstroInformatics"
+  type: website
+  output-dir: docs
 
 
 
