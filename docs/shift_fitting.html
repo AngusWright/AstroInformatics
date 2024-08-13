@@ -83,7 +83,7 @@ ul.task-list li input[type="checkbox"] {
 <!-- margin-sidebar -->
     
 <!-- main -->
-<main class="content" id="quarto-document-content">
+<main class="content page-columns page-full" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
@@ -112,9 +112,10 @@ revealjs:
     fig-responsive: true
     fig-dpi: 220
 --->
+<div class="column-screen-inset">
 <pre class="shinylive-r" data-engine="r"><code>#| standalone: true
 #| viewerHeight: 600
-#| viewerWidth: 1200
+#| column: screen-inset-shaded
 
 library(shiny)
 library(bslib)
@@ -394,6 +395,7 @@ server &lt;- function(input, output, session) {
 # Create Shiny app ----
 shinyApp(ui = ui, server = server)
 </code></pre>
+</div>
 
 
 
