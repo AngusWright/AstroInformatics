@@ -1,18 +1,8 @@
 ---
-title: "Our first r-shinylive Quarto document!"
-filters:
-  - shinylive
-format: 
-  revealjs: 
-    scrollable: true 
-    fig-width: 400
-    fig-height: 400
-    fig-responsive: true
-    fig-dpi: 220
-    
+title: "first_shinylive.qmd"
+format: html
+editor: visual
 ---
-
-
 
 ```{shinylive-r}
 #| standalone: true
@@ -36,6 +26,52 @@ ui <- page_sidebar(
 server <- function(input, output, session) {
    selectedData <- reactive({
       iris[, c(input$xcol, input$ycol)]
+    })
+  
+  clusters <- reactive({
+    kmeans(selectedData(), input$clusters)
+  })
+  
+  output$plot <- renderPlot({
+    palette(c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",
+      "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999"))
+  
+    par(mar = c(4.1, 4.1, 0, 1))
+    magicaxis::magplot(selectedData(),
+         col = clusters()$cluster,
+         pch = 20, cex = 3, side=1:4,labels=c(T,T,F,F), 
+         xlab="xlabel", #gsub("\."," ",input$xcol),
+         ylab="ylabel") #gsub("\."," ",input$ycol))
+    points(clusters()$centers, pch = 4, cex = 4, lwd = 4)
+  })
+}
+
+# Create Shiny app ----
+shinyApp(ui = ui, server = server)
+```
+
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 600
+#|
+library(shiny)
+library(bslib)
+
+vars <- setdiff(names(cars), "Species")
+
+# Define UI for app that draws a histogram ----
+ui <- page_sidebar(
+  sidebar = sidebar(open = "open", 
+    selectInput('xcol', 'X Variable', vars),
+    selectInput('ycol', 'Y Variable', vars, selected = vars[[2]]),
+    numericInput('clusters', 'Cluster count', 3, min = 1, max = 9)
+  ),
+  plotOutput("plot", height="100%",width="100%", fill=TRUE)
+)
+
+server <- function(input, output, session) {
+   selectedData <- reactive({
+      cars[, c(input$xcol, input$ycol)]
     })
   
   clusters <- reactive({
