@@ -114,6 +114,7 @@ revealjs:
 --->
 <pre class="shinylive-r" data-engine="r"><code>#| standalone: true
 #| viewerHeight: 600
+#| viewerWidth: 1200
 
 library(shiny)
 library(bslib)
@@ -184,7 +185,7 @@ sliderInput("annot_cex",
             step = 0.1, 
             value = 1.5)
   ),
-  plotOutput("plot", height="100%",width="100%", fill=TRUE)
+  plotOutput("plot", height="100%",width="100%", fill=FALSE)
 )
 
 server &lt;- function(input, output, session) {
