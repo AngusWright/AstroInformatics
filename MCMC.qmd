@@ -24,7 +24,689 @@ revealjs:
 #| standalone: true
 #| viewerHeight: 800
 
-source("~/Research/Bochum/ShinyApps/MCMC/app.R")
+# Load packages used for the Shiny interface, sampling, and UI icons.
+library(shiny)
+library(bslib)
+library(mvtnorm)
+library(bsicons)
+
+# Build the sidebar controls and tabs that display sampler diagnostics.
+ui <- page_sidebar(fillable = TRUE,
+  #Sidebar {{{
+  sidebar = sidebar(open = "open", 
+                    accordion(  
+                      accordion_panel( #Model Parameters ) {{{
+                        title = "Model Parameters",
+                        icon = bsicons::bs_icon("menu-app"),
+                        selectInput("model_type", "Model Type:",
+                                    c("Gaussian (known var)" = "gaussian",
+                                      "Binomial" = "binomial",
+                                      "Beta" = "beta",
+                                      "Gamma" = "gamma"),
+                                    selected = 'gaussian'),    
+                        sliderInput(
+                          'num_data',
+                          'Number of data observations (10^x):',
+                          min = 0,
+                          max = 4,
+                          step = 0.1,
+                          value = 1.0
+                        ),
+                        conditionalPanel( #Gaussian options ) {{{
+                          condition = 'input.model_type=="gaussian"',
+                          sliderInput(
+                            'theta1_gaussian',
+                            'Data mean x:',
+                            min = -1.5,
+                            max = 1.5,
+                            step = 0.01,
+                            value = 0.0
+                          ),
+                          sliderInput(
+                            'theta2_gaussian',
+                            'Data mean y:',
+                            min = -1.5,
+                            max = 1.5,
+                            step = 0.01,
+                            value = 0.0
+                          ),
+                          sliderInput(
+                            'stdev',
+                            'Data Standard Deviation:',
+                            min = 0.01,
+                            max = 2.0,
+                            step = 0.1,
+                            value = 1.2
+                          ),
+                          sliderInput(
+                            'rho',
+                            'Data correlation:',
+                            min = -1.0,
+                            max = 1.0,
+                            step = 0.1,
+                            value = 0.8
+                          ),
+                          sliderInput(
+                            'prior1_gaussian',
+                            'x-Mean Prior Range:',
+                            min = -5.5,
+                            max = 5.5,
+                            step = 0.1,
+                            value = c(-3.5,3.5)
+                          ),
+                          sliderInput(
+                            'prior2_gaussian',
+                            'y-mean Prior Range:',
+                            min = -5.5,
+                            max = 5.5,
+                            step = 0.1,
+                            value = c(-3.5,3.5)
+                          ),
+                        ), #}}}
+                        conditionalPanel( #Binomial options ) {{{
+                          condition = 'input.model_type=="binomial"',
+                          sliderInput(
+                            'theta1_binomial',
+                            'Bias:',
+                            min = 0,
+                            max = 1,
+                            step = 0.01,
+                            value = 0.3, 
+                          ),
+                          sliderInput(
+                            'theta2_binomial',
+                            'Number of draws:',
+                            min = 1,
+                            max = 10,
+                            step = 1,
+                            value = 5
+                          ),
+                          sliderInput(
+                            'prior1_binomial',
+                            'Prior Range:',
+                            min = 0,
+                            max = 1,
+                            step = 0.1,
+                            value = c(0,1)
+                          ),
+                          sliderInput(
+                            'prior2_binomial',
+                            'Prior Range:',
+                            min = 1,
+                            max = 10,
+                            step = 1,
+                            value = c(1,10)
+                          )
+                        ),#}}}
+                        conditionalPanel( #Beta options ) {{{
+                          condition = 'input.model_type=="beta"',
+                          sliderInput(
+                            'theta1_beta',
+                            'Shape1:',
+                            min = 0,
+                            max = 10,
+                            step = 0.1,
+                            value = 7, 
+                          ),
+                          sliderInput(
+                            'theta2_beta',
+                            'Shape2:',
+                            min = 0,
+                            max = 10,
+                            step = 0.1,
+                            value = 2
+                          ),
+                          sliderInput(
+                            'prior1_beta',
+                            'Prior Range Shape1:',
+                            min = 0,
+                            max = 10,
+                            step = 0.1,
+                            value = c(0,10)
+                          ),
+                          sliderInput(
+                            'prior2_beta',
+                            'Prior Range Shape2:',
+                            min = 0,
+                            max = 10,
+                            step = 0.1,
+                            value = c(0,10)
+                          )
+                        ),#}}}
+                        conditionalPanel( #Gamma options ) {{{
+                          condition = 'input.model_type=="gamma"',
+                          sliderInput(
+                            'theta1_gamma',
+                            'Shape:',
+                            min = 0,
+                            max = 10,
+                            step = 0.1,
+                            value = 7, 
+                          ),
+                          sliderInput(
+                            'theta2_gamma',
+                            'Rate:',
+                            min = 0,
+                            max = 10,
+                            step = 0.1,
+                            value = 2
+                          ),
+                          sliderInput(
+                            'prior1_gamma',
+                            'Prior Range Shape:',
+                            min = 0,
+                            max = 10,
+                            step = 0.1,
+                            value = c(0,10)
+                          ),
+                          sliderInput(
+                            'prior2_gamma',
+                            'Prior Range Rate:',
+                            min = 0,
+                            max = 10,
+                            step = 0.1,
+                            value = c(0,10)
+                          )
+                        ),#}}}
+                        selectInput("prior_type", "Prior Specification:",
+                                    c("Uniform" = "uniform",
+                                      "Gaussian" = "gaussian"),
+                                    selected='uniform'),
+                      ),  
+                      #}}}
+                      accordion_panel( #Sampler Parameters ) {{{
+                        title = "Sampler Parameters",
+                        icon = bsicons::bs_icon("sliders"),
+                        selectInput("sampler", "Sampler Type:",
+                                    c("Gibbs" = "gibbs",
+                                      "Metropolis-Hastings" = "mh"),
+                                    selected='mh'), 
+                        sliderInput("prop_sd",
+                                    withMathJax("Standard Deviation of proposal function:"),
+                                    min = 0.01,
+                                    max = 1.0,
+                                    step=0.01,
+                                    value = 0.2),
+                        sliderInput("n_chain",
+                                    withMathJax("Number of chains to run:"),
+                                    min = 1,
+                                    max = 8,
+                                    step=1,
+                                    value = 4),
+                        sliderInput("n_samp",
+                                    withMathJax("Number of samples in the chain ($10^{x}):"),
+                                    min = 2,
+                                    max = 4,
+                                    step=0.1,
+                                    value = 3),
+                        sliderInput("n_burn",
+                                    withMathJax("Number of burn-in samples to discard ($10^{x}$):"),
+                                    min = 0,
+                                    max = 3,
+                                    step=0.1,
+                                    value = 0),
+                        sliderInput("step_thin",
+                                    withMathJax("Number of steps between thinned samples:"),
+                                    min = 1, 
+                                    max = 30,
+                                    step = 1, 
+                                    value = 1),
+                      ),  
+                      #}}}
+                      accordion_panel( #Figure Options ) {{{
+                        title = "Figure Options",
+                        icon = bsicons::bs_icon("bar-chart"),
+                        checkboxInput("pstyle", "Lines instead of points?", TRUE),
+                        checkboxInput("prior_vol", "Show prior volume?", TRUE),
+                        sliderInput("annot_cex",
+                                    expression("Annotation Scaling"),
+                                    min = 0.5,
+                                    max = 2.5,
+                                    step = 0.1, 
+                                    value = 1.5)
+                      ),  
+                      #}}}
+                      id = "acc",  
+                      open = NULL
+                    ),
+  ),#}}}
+  #Main panel {{{
+  tabsetPanel(tabPanel("Posterior",column("",plotOutput("plot", height="auto",width="auto", fill=TRUE),width=12)),
+              tabPanel("Parameter Inference",column("",plotOutput("plot2", height="100%",width="100%", fill=TRUE),width=12)),
+              tabPanel("Chain Sequence",column("",plotOutput("plot3", height="100%",width="100%", fill=TRUE),width=12)),
+              tabPanel("Sample Correlation",column("",plotOutput("plot4", height="100%",width="100%", fill=TRUE),width=12))),
+  #}}}
+)
+
+# Define reactive sampling logic and render the diagnostic plots.
+server <- function(input, output, session) {
+  
+  observe({
+    # Configure plot colours and select a proposal mechanism for the chosen sampler.
+      palette(c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",
+              "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999"))
+    
+    #Define the proposal function #{{{
+    if (input$sampler=='mh') { 
+      if (input$model_type!='binomial') { 
+        #For MH & non-binomial: Multivariate Gaussian {{{
+        propfun <- function(X) { 
+          #Proposal function for the Metropolis-Hastings sampler
+          prop <- rmvnorm(1,X,input$prop_sd*diag(length(X)))
+          return(prop)
+        }
+        #}}}
+      } else { 
+        #For MH with binomial: Gaussian + random-walk {{{
+        propfun <- function(X) { 
+          #Proposal function for the Metropolis-Hastings sampler
+          prop <- c(rnorm(1,X[1],input$prop_sd),sample(c(-1,0,1),size=1)+X[2])
+          return(prop)
+        }
+      }
+      #}}}
+    } else { 
+      #For Gibbs: conditional distributions {{{
+      propfun <- function(X) { 
+        #Proposal function for the gibbs sampler
+        Xp <- rnorm(1, data[2] + input$rho*(X[2]  - data[2]), sqrt(1 - input$rho^2))
+        Yp <- rnorm(1, data[1] + input$rho*(Xp - data[1]), sqrt(1 - input$rho^2))
+        return(c(Xp,Yp))
+      }
+      #}}}
+    }
+    #}}}
+    # Define the log-likelihood function for the selected model {{{
+    theta1<-input[[paste0("theta1_",input$model_type)]]
+    theta2<-input[[paste0("theta2_",input$model_type)]]
+    prior1<-input[[paste0("prior1_",input$model_type)]]
+    prior2<-input[[paste0("prior2_",input$model_type)]]
+    if (input$model_type=='gaussian') {  
+      #Set plot limits {{{
+      xlim<-c(-5,5)
+      ylim<-c(-5,5)
+      #}}}
+      #Gaussian data {{{
+      observed_data <- rmvnorm(round(10^input$num_data),mean=c(theta1, theta2),
+                               sigma=input$stdev^2*matrix(c(1,input$rho,input$rho,1), nrow=2))
+      #}}}
+      #Log-likelihood function for the Metropolis-Hastings sampler: gaussian {{{
+      loglikefun<-function(X) { 
+        return(sum(dmvnorm(observed_data, mean=X,
+                           sigma=input$stdev^2*matrix(c(1,input$rho,input$rho,1),nrow=2),
+                           log=TRUE)))
+      }
+      #}}}
+    } else if (input$model_type=='binomial') {  
+      #Set plot limits {{{
+      xlim<-c(-0.2,1.2)
+      ylim<-c(0,11)
+      #}}}
+      #Binomial data {{{
+      observed_data <- rbinom(10^input$num_data,prob=theta1, size=theta2)
+      #}}}
+      #Log-likelihood function for the Metropolis-Hastings sampler: Binomial {{{
+      loglikefun<-function(X) { 
+        vals<-dbinom(observed_data,prob=X[1],size=round(X[2]),log=TRUE)
+        #if (any(is.na(vals))) stop(paste0("invalid parameters:",paste(X,collapse=' ')))
+        return(sum(dbinom(observed_data,prob=X[1],size=X[2],log=TRUE)))
+      }
+      #}}}
+    } else if (input$model_type=='beta') {  
+      #Set plot limits {{{
+      xlim<-c(-1,11)
+      ylim<-c(-1,11)
+      #}}}
+      #Beta data {{{
+      observed_data <- rbeta(10^input$num_data,shape1=theta1, shape2=theta2)
+      #}}}
+      #Log-likelihood function for the Metropolis-Hastings sampler: Beta {{{
+      loglikefun<-function(X) { 
+        return(sum(dbeta(observed_data,shape1=X[1],shape2=X[2],log=TRUE)))
+      }
+      #}}}
+    } else if (input$model_type=='gamma') {  
+      #Set plot limits {{{
+      xlim<-c(-1,11)
+      ylim<-c(-1,11)
+      #}}}
+      #Gamma data {{{
+      observed_data <- rgamma(10^input$num_data,shape=theta1, rate=theta2)
+      #}}}
+      #Posterior function for the Metropolis-Hastings sampler: Gamma {{{
+      loglikefun<-function(X) { 
+        return(sum(dgamma(observed_data,shape=X[1],rate=X[2],log=TRUE)))
+      }
+      #}}}
+    } else { 
+      stop("Unimplemented model")
+    }
+    #}}}
+    #Define the prior function {{{
+    if (input$prior_type=='uniform') { #{{{
+      priorfun<-function(X) { 
+        if (all(X >= c(prior1[1],prior2[1])) && 
+            all(X <= c(prior1[2],prior2[2]))) {
+          return(1)
+        } else { 
+          return(0)
+        }
+      }
+      #}}}
+    } else { 
+      stop("Unimplemented prior type")
+    }
+    #}}}
+    # Define the posterior function {{{
+    logpostfun<-function(X) { 
+      return(loglikefun(X)+log(priorfun(X)))
+    }
+    # }}}
+    #Define the sampler {{{
+    # Implement a generic Metropolis-Hastings chain using the selected proposal and posterior {{{
+    MH<-function(n,start,data) { 
+      #Initialise the variables
+      X<-matrix(NA,ncol=length(start),nrow=n)
+      X[1,]<-start
+      #Loop over our iterations 
+      for (i in 2:n) { 
+        #Generate a proposal point
+        prop<-propfun(X[i-1,])
+        # Compare on the log scale to avoid overflow in the acceptance ratio.
+        accept <- logpostfun(prop) - logpostfun(X[i-1,])
+        if (is.na(accept)) { 
+          accept <- -Inf
+        }
+        u <- log(runif(1))
+        #Test the acceptance criteria
+        if (u<accept) { 
+          #Accept the new data point
+          X[i,]<-prop
+        } else { 
+          X[i,]<-X[i-1,]
+        }
+      }
+      return(X)
+    }
+    #}}}
+    # Create a Gibbs sampler for supported models, or use Metropolis-Hastings {{{
+    if (input$sampler=='gibbs') {
+      #Gibbs sampler: {{{
+      observed_data<-colMeans(observed_data)
+      if (input$model_type=='gaussian') { 
+        #Gibbs Sampler with Gaussian likelihood {{{
+        Gibbs<-function(start,n=1e3,data=c(0.0,0.0)) {
+          #Initialise the variables 
+          X<-Y<-rep(NA,n)
+          #Enter the initial guesses 
+          X[1]<-start[1]
+          Y[1]<-start[2]
+          #Loop over the next n steps
+          for (i in 2:n) { 
+            #Generate the sample for X
+            X[i]<-rnorm(1,data[2]+input$rho*(Y[i-1]-data[2]),sqrt(1-input$rho^2))
+            Y[i]<-rnorm(1,data[1]+input$rho*(X[i]-data[1]),sqrt(1-input$rho^2))
+          }
+          return(cbind(X,Y))
+        }
+        sampler<-Gibbs
+        #}}}
+      } else { 
+        stop(paste("model",input$model_type,"not yet implemented for gibbs")) 
+      }
+      #}}}
+    } else if (input$sampler=='mh') { 
+      #Metropolis-Hastings {{{
+      sampler<-MH 
+      #}}}
+    } else { 
+      stop(paste("sampler",input$sampler,"not yet implemented")) 
+    }
+    #}}}
+    #}}}
+    
+    # Generate reproducible starting points and run the requested number of chains {{{
+    set.seed(666)
+    starts<-cbind(runif(input$n_chain,min=prior1[1],max=prior1[2]),
+                  runif(input$n_chain,min=prior2[1],max=prior2[2]))
+    if (input$model_type=='binomial') { 
+      starts[,2]<-round(starts[,2])
+    }
+    #}}}
+    #Construct the Samples {{{
+    samps<-{}
+    for (j in 1:nrow(starts)) 
+      samps[[j]]<-sampler(start=unlist(starts[j,]),n=10^input$n_samp,data=observed_data)
+    #}}}
+    
+    colours<-c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",
+               "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999")
+    # Plot1: Render the joint posterior samples, marking burn-in separately from retained draws {{{
+    output$plot <- renderImage({
+      img<-htmltools::capturePlot({
+        #Initialise the plot
+        par(mar = c(4.1, 4.5, 1, 1))
+        
+        #Plot the samples 
+        plot(starts,type='p',xlab=expression(theta[1]),ylab=expression(theta[2]),family='serif',
+                           xlim=xlim,ylim=ylim,lwd=2,cex=2,cex.lab=input$annot_cex,cex.axis=input$annot_cex,tcl=0.5)
+        if (input$prior_vol) {
+          polygon(x=c(prior1[1], prior1[2], prior1[2], prior1[1]),
+                  y=c(prior2[1], prior2[1], prior2[2], prior2[2]),
+                  col=seqinr::col2alpha('grey',0.3),border=NA)
+        }
+        for (i in 1:nrow(starts)){ 
+          if (input$pstyle==TRUE) {
+            if (round(10^input$n_burn)-1>0) { 
+              lines(samps[[i]][1:(round(10^input$n_burn)-1),],lty=1,lwd=2,
+                    col=seqinr::col2alpha('black',0.2)
+              )
+            }
+            lines(samps[[i]][seq(round(10^input$n_burn),round(10^input$n_samp),by=input$step_thin),],lty=1,lwd=2,
+                  col=seqinr::col2alpha(colours[i],0.2)
+            )
+          } else {
+            points(samps[[i]],lty=1,lwd=2,pch=20,cex=0.5,
+                   col=c(rep(seqinr::col2alpha('black',0.2),10^input$n_burn),
+                         rep(seqinr::col2alpha(colours[i],0.2),10^input$n_samp-10^input$n_burn))
+            )
+          }
+        }
+        points(theta1,theta2,pch='+',cex=4,col='red')
+      }, width=600,height=600)
+      list(src = img)
+    }, deleteFile = TRUE)
+    #}}}
+    # Plot2: Render the parameter-inference view of the sampled posterior {{{
+    output$plot2 <- renderImage({
+      img<-htmltools::capturePlot({
+        #Initialise the plot
+        layout(c(1,2))
+        par(mar = c(4.1, 4.5, 1, 1))
+        
+        #Theta1
+        #Construct the variable samples 
+        plot_samp<-NULL
+        for (i in 1:nrow(starts)) { 
+          plot_samp<-c(plot_samp,samps[[i]][seq(10^input$n_burn,10^input$n_samp,by=input$step_thin),1])
+        } 
+        #Plot the samples 
+        plot(density(plot_samp,bw=input$prop_sd/sqrt(12),kern='rect'),type='l',xlab=expression(theta[1]),ylab=expression(Density),family='serif',
+                           xlim=xlim,lwd=2,cex=2,cex.lab=input$annot_cex,cex.axis=input$annot_cex,main='',tcl=0.5)
+        if (input$prior_vol) {
+          abline(v=prior1,col='grey',lwd=2)
+        }
+        abline(v=theta1,lty=2,col='blue',lwd=2)
+
+        #Theta2 
+        #Construct the variable samples 
+        plot_samp<-NULL
+        for (i in 1:nrow(starts)) { 
+          plot_samp<-c(plot_samp,samps[[i]][seq(10^input$n_burn,10^input$n_samp,by=input$step_thin),2])
+        } 
+        #Plot the samples 
+        plot(density(plot_samp,bw=input$prop_sd/sqrt(12),kern='rect'),type='l',xlab=expression(theta[2]),ylab=expression(Density),family='serif',
+                           xlim=ylim,lwd=2,cex=2,cex.lab=input$annot_cex,cex.axis=input$annot_cex,main="",tcl=0.5)
+        if (input$prior_vol) {
+          abline(v=prior2,col='grey',lwd=2)
+        }
+        abline(v=theta2,lty=2,col='blue',lwd=2)
+      }, width=600,height=600)
+      list(src = img)
+    }, deleteFile = TRUE)
+    #}}}
+    # Plot3: Render trace plots for each parameter to show chain progression and mixing. {{{
+    output$plot3 <- renderImage({
+      img<-htmltools::capturePlot({
+        #Initialise the plot
+        layout(c(1,2))
+        par(mar = c(4.1, 4.5, 1, 1))
+        
+        #Theta1
+        #Plot the samples 
+        plot.new()
+        plot.window(xlim=c(1,10^input$n_samp),ylim=xlim,log='x')
+        box(lwd=1.5,col='black')
+        mtext(side=1,text="Step Number",line=2.5,cex=input$annot_cex,family='serif')
+        mtext(side=2,text=expression(theta[1]),line=2.0,cex=input$annot_cex,family='serif')
+        axis(side=1,labels=T,tcl=0.5)
+        axis(side=2,labels=T,tcl=0.5)
+        axis(side=3,labels=F,tcl=0.5)
+        axis(side=4,labels=F,tcl=0.5)
+        if (input$prior_vol) {
+          abline(h=prior1,col='grey',lwd=2)
+        }
+        for (i in 1:nrow(starts)){ 
+          if (input$pstyle==TRUE) {
+            if (input$n_burn>0) {
+              lines(1:(10^input$n_burn-1),samps[[i]][1:(10^input$n_burn-1),1],lty=1,lwd=2,
+                    col=seqinr::col2alpha('black',0.5)
+              )
+            }
+            lines((10^input$n_burn):(10^input$n_samp),samps[[i]][(10^input$n_burn):(10^input$n_samp),1],lty=1,lwd=2,
+                  col=seqinr::col2alpha(colours[i],0.5)
+            )
+          } else {
+            points(1:(10^input$n_samp),samps[[i]][,1],lty=1,lwd=2,pch=20,cex=0.5,
+                   col=c(rep(seqinr::col2alpha('black',0.5),10^input$n_burn),
+                         rep(seqinr::col2alpha(colours[i],0.5),10^input$n_samp-10^input$n_burn))
+            )
+          }
+        }
+        #Theta2
+        plot.new()
+        plot.window(xlim=c(1,10^input$n_samp),ylim=ylim,log='x')
+        box(lwd=1.5,col='black')
+        mtext(side=1,text="Step Number",line=2.5,cex=input$annot_cex,family='serif')
+        mtext(side=2,text=expression(theta[2]),line=2.0,cex=input$annot_cex,family='serif')
+        axis(side=1,labels=T,tcl=0.5)
+        axis(side=2,labels=T,tcl=0.5)
+        axis(side=3,labels=F,tcl=0.5)
+        axis(side=4,labels=F,tcl=0.5)
+        if (input$prior_vol) {
+          abline(h=prior2,col='grey',lwd=2)
+        }
+        for (i in 1:nrow(starts)){ 
+          if (input$pstyle==TRUE) {
+            if (input$n_burn>0) {
+              lines(1:(10^input$n_burn-1),samps[[i]][1:(10^input$n_burn-1),2],lty=1,lwd=2,
+                    col=seqinr::col2alpha('black',0.5)
+              )
+            }
+            lines((10^input$n_burn):(10^input$n_samp),samps[[i]][(10^input$n_burn):(10^input$n_samp),2],lty=1,lwd=2,
+                  col=seqinr::col2alpha(colours[i],0.5)
+            )
+          } else {
+            points(1:(10^input$n_samp),samps[[i]][,2],lty=1,lwd=2,pch=20,cex=0.5,
+                   col=c(rep(seqinr::col2alpha('black',0.5),10^input$n_burn),
+                         rep(seqinr::col2alpha(colours[i],0.5),10^input$n_samp-10^input$n_burn))
+            )
+          }
+        }
+      }, width=600,height=600)
+      list(src = img)
+    }, deleteFile = TRUE)
+    #}}}
+    # Plot4: Render the sampled parameter-pair relationship across all chains {{{
+    output$plot4 <- renderImage({
+      img<-htmltools::capturePlot({
+        #Initialise the plot
+        layout(c(1,2))
+        par(mar = c(4.1, 4.5, 1, 1))
+        
+        #Theta1
+        #Plot the samples 
+        plot.new()
+        plot.window(xlim=prior1,ylim=prior1)
+        box(lwd=1.5,col='black')
+        mtext(side=1,text=expression(theta[1]^{i+1}),line=2.5,cex=input$annot_cex,family='serif')
+        mtext(side=2,text=expression(theta[1]^{i}),line=2.0,cex=input$annot_cex,family='serif')
+        axis(side=1,labels=T,tcl=0.5)
+        axis(side=2,labels=T,tcl=0.5)
+        axis(side=3,labels=F,tcl=0.5)
+        axis(side=4,labels=F,tcl=0.5)
+        if (input$prior_vol) {
+          abline(h=prior1,col='grey',lwd=2)
+        }
+        for (i in 1:nrow(starts)){ 
+          plot_samp<-samps[[i]][(10^input$n_burn):(10^input$n_samp),1]
+          plot_samp<-plot_samp[seq(1,length(plot_samp),by=input$step_thin)]
+          if (input$pstyle==TRUE) {
+            lines(plot_samp[1:(length(plot_samp)-1)],
+                  plot_samp[2:(length(plot_samp))],
+                  lty=1,lwd=2,
+                  col=seqinr::col2alpha(colours[i],0.5)
+            )
+          } else {
+            points(plot_samp[1:(length(plot_samp)-1)],
+                  plot_samp[2:(length(plot_samp))],
+                  pch=20,cex=0.5,lwd=2,
+                  col=seqinr::col2alpha(colours[i],0.5)
+            )
+          }
+        }
+        #Theta2
+        #Plot the samples 
+        plot.new()
+        plot.window(xlim=prior2,ylim=prior2)
+        box(lwd=1.5,col='black')
+        mtext(side=1,text=expression(theta[2]^{i+1}),line=2.5,cex=input$annot_cex,family='serif')
+        mtext(side=2,text=expression(theta[2]^{i}),line=2.0,cex=input$annot_cex,family='serif')
+        axis(side=1,labels=T,tcl=0.5)
+        axis(side=2,labels=T,tcl=0.5)
+        axis(side=3,labels=F,tcl=0.5)
+        axis(side=4,labels=F,tcl=0.5)
+        if (input$prior_vol) {
+          abline(h=prior2,col='grey',lwd=2)
+        }
+        for (i in 1:nrow(starts)){ 
+          plot_samp<-samps[[i]][(10^input$n_burn):(10^input$n_samp),2]
+          plot_samp<-plot_samp[seq(1,length(plot_samp),by=input$step_thin)]
+          if (input$pstyle==TRUE) {
+            lines(plot_samp[1:(length(plot_samp)-1)],
+                  plot_samp[2:(length(plot_samp))],
+                  lty=1,lwd=2,
+                  col=seqinr::col2alpha(colours[i],0.5)
+            )
+          } else {
+            points(plot_samp[1:(length(plot_samp)-1)],
+                  plot_samp[2:(length(plot_samp))],
+                  pch=20,cex=0.5,lwd=2,
+                  col=seqinr::col2alpha(colours[i],0.5)
+            )
+          }
+        }
+      }, width=600,height=600)
+      list(src = img)
+    }, deleteFile = TRUE)
+    #}}}
+  
+  })
+  
+}
+
+# Launch the Shiny application with the defined UI and server.
+shinyApp(ui = ui, server = server)
 
 ```
 
