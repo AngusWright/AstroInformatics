@@ -1,0 +1,6 @@
+Shiny App showing behaviour of MH MCMC sampler 
+
+- different models 
+- different priors 
+- impact of thinning, burn-in, multiple starts 
+
