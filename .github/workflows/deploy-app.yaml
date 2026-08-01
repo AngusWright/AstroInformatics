@@ -1,0 +1,52 @@
+name: Deploy Shinylive apps
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: rstudio/shiny-workflows/setup-r-package@v1
+        with:
+          packages: |
+            renv
+            posit-dev/r-shinylive
+            sessioninfo
+
+      - name: Install app dependencies
+        shell: Rscript {0}
+        run: pak::pak(unique(renv::dependencies(c("MCMC", "ShiftFitting"))$Package))
+
+      - name: Export apps
+        shell: Rscript {0}
+        run: source("deploy.R")
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
