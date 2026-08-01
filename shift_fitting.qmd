@@ -22,7 +22,8 @@ revealjs:
 
 ```{shinylive-r}
 #| standalone: true
-#| viewerHeight: 600
+#| viewerHeight: 1200
+#| viewerWidth: 1200
 
 library(shiny)
 library(bslib)
@@ -211,11 +212,11 @@ server <- function(input, output, session) {
   par(mar = c(4.1, 4.1, 0, 1))
   if (input$plot_type=='data_model') { 
     if (input$model_type=='linear') { 
-      magicaxis::magplot(x,yobs,pch=20,xlab='x',ylab='f(x)',ylim=range(x),
-              cex.lab=input$annot_cex,cex.axis=input$annot_cex)
+      plot(x, yobs, pch = 20, xlab = 'x', ylab = 'f(x)', ylim = range(x),
+           cex.lab = input$annot_cex, cex.axis = input$annot_cex)
     } else { 
-      magicaxis::magplot(x,yobs,pch=20,xlab='x',ylab='n(x)',ylim=c(-0.05,0.5),
-              cex.lab=input$annot_cex,cex.axis=input$annot_cex)
+      plot(x, yobs, pch = 20, xlab = 'x', ylab = 'n(x)', ylim = c(-0.05, 0.5),
+           cex.lab = input$annot_cex, cex.axis = input$annot_cex)
     } 
     #Loop over model widths 
     for (i in 1:length(sds)) {
@@ -233,7 +234,8 @@ server <- function(input, output, session) {
     #Add one noise realisation of the data
     points(x,yobs,pch=20)
     #Add the uncertanties
-    magicaxis::magerr(x,yobs,ylo=noise.model)
+    arrows(x, yobs - noise.model, x, yobs + noise.model, angle = 90,
+           code = 3, length = 0.03)
     #Add the legend
     if (input$model_type=='linear') labbase<-'INT:'
     if (input$model_type=='gaussian') labbase<-'STD:'
@@ -251,11 +253,11 @@ server <- function(input, output, session) {
     text(tcoord[1],tcoord[2],lab=paste0('Noise Model:\n',model),pos=3,cex=input$annot_cex) 
   } else if (input$plot_type=='bias') { 
     #Initialise the best-fit means plot
-    magicaxis::magplot(density(fits[1,],bw=0.01/sqrt(12),kern='rect',
-                    from=min(c(-0.2,min(fits))),
-                    to=max(c(0.2,max(fits)))),
-            xlab='Model Bias',ylab='PDF',type='n',
-            cex.lab=input$annot_cex,cex.axis=input$annot_cex)
+    plot(density(fits[1,],bw=0.01/sqrt(12),kern='rect',
+                 from=min(c(-0.2,min(fits))),
+                 to=max(c(0.2,max(fits)))),
+         xlab='Model Bias',ylab='PDF',type='n',
+         cex.lab=input$annot_cex,cex.axis=input$annot_cex)
     #Loop over each of the model widths
     for (i in 1:length(sds)) {
       lines(density(fits[i,],bw=0.05/sqrt(12),kern='rect',
@@ -267,10 +269,10 @@ server <- function(input, output, session) {
     #Initialise the best-fit means plot
     if (input$model_type=='linear') labbase<-'Intercept'
     if (input$model_type=='gaussian') labbase<-'Stdev'
-    magicaxis::magplot(jitter(rep(sds,n.noise)),fits,
-            col=rep(RColorBrewer::brewer.pal(8,'Set2')[1:length(sds)],n.noise),
-            ylab='Model Bias',xlab=paste('Model',labbase),type='p',pch=20,
-            cex.lab=input$annot_cex,cex.axis=input$annot_cex)
+    plot(jitter(rep(sds,n.noise)),fits,
+         col=rep(RColorBrewer::brewer.pal(8,'Set2')[1:length(sds)],n.noise),
+         ylab='Model Bias',xlab=paste('Model',labbase),type='p',pch=20,
+         cex.lab=input$annot_cex,cex.axis=input$annot_cex)
     dat<-data.frame(sds=rep(sds,n.noise),fits=as.numeric(fits))
     new<-data.frame(sds=seq(min(sds)-1,max(sds)+1,len=1e3))
     lm.fit<-lm(fits~sds,dat)
@@ -303,4 +305,3 @@ server <- function(input, output, session) {
 shinyApp(ui = ui, server = server)
 
 ```
-
