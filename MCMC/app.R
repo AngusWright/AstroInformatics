@@ -29,7 +29,7 @@ ui <- page_sidebar(fillable = TRUE,
                                     selected = 'gaussian'),    
                         sliderInput(
                           'num_data',
-                          'Number of data observations (10^x):',
+                          withMathJax('Number of data observations ($10^x$):'),
                           min = 0,
                           max = 4,
                           step = 0.1,
@@ -200,10 +200,6 @@ ui <- page_sidebar(fillable = TRUE,
                       accordion_panel( #Sampler Parameters ) {{{
                         title = "Sampler Parameters",
                         icon = bsicons::bs_icon("sliders"),
-                        selectInput("sampler", "Sampler Type:",
-                                    c("Gibbs" = "gibbs",
-                                      "Metropolis-Hastings" = "mh"),
-                                    selected='mh'), 
                         sliderInput("prop_sd",
                                     withMathJax("Standard Deviation of proposal function:"),
                                     min = 0.01,
@@ -250,7 +246,7 @@ ui <- page_sidebar(fillable = TRUE,
                       ),  
                       #}}}
                       id = "acc",  
-                      open = NULL
+                      open = "Sampler Parameters"
                     ),
   ),#}}}
   #Main panel {{{
@@ -270,34 +266,23 @@ server <- function(input, output, session) {
               "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999"))
     
     #Define the proposal function #{{{
-    if (input$sampler=='mh') { 
-      if (input$model_type!='binomial') { 
-        #For MH & non-binomial: Multivariate Gaussian {{{
-        propfun <- function(X) { 
-          #Proposal function for the Metropolis-Hastings sampler
-          prop <- rmvnorm(1,X,input$prop_sd*diag(length(X)))
-          return(prop)
-        }
-        #}}}
-      } else { 
-        #For MH with binomial: Gaussian + random-walk {{{
-        propfun <- function(X) { 
-          #Proposal function for the Metropolis-Hastings sampler
-          prop <- c(rnorm(1,X[1],input$prop_sd),sample(c(-1,0,1),size=1)+X[2])
-          return(prop)
-        }
+    if (input$model_type!='binomial') { 
+      #For MH & non-binomial: Multivariate Gaussian {{{
+      propfun <- function(X) { 
+        #Proposal function for the Metropolis-Hastings sampler
+        prop <- rmvnorm(1,X,input$prop_sd*diag(length(X)))
+        return(prop)
       }
       #}}}
     } else { 
-      #For Gibbs: conditional distributions {{{
+      #For MH with binomial: Gaussian + random-walk {{{
       propfun <- function(X) { 
-        #Proposal function for the gibbs sampler
-        Xp <- rnorm(1, data[2] + input$rho*(X[2]  - data[2]), sqrt(1 - input$rho^2))
-        Yp <- rnorm(1, data[1] + input$rho*(Xp - data[1]), sqrt(1 - input$rho^2))
-        return(c(Xp,Yp))
+        #Proposal function for the Metropolis-Hastings sampler
+        prop <- c(rnorm(1,X[1],input$prop_sd),sample(c(-1,0,1),size=1)+X[2])
+        return(prop)
       }
-      #}}}
     }
+    #}}}
     #}}}
     # Define the log-likelihood function for the selected model {{{
     theta1<-input[[paste0("theta1_",input$model_type)]]
@@ -412,39 +397,8 @@ server <- function(input, output, session) {
       return(X)
     }
     #}}}
-    # Create a Gibbs sampler for supported models, or use Metropolis-Hastings {{{
-    if (input$sampler=='gibbs') {
-      #Gibbs sampler: {{{
-      observed_data<-colMeans(observed_data)
-      if (input$model_type=='gaussian') { 
-        #Gibbs Sampler with Gaussian likelihood {{{
-        Gibbs<-function(start,n=1e3,data=c(0.0,0.0)) {
-          #Initialise the variables 
-          X<-Y<-rep(NA,n)
-          #Enter the initial guesses 
-          X[1]<-start[1]
-          Y[1]<-start[2]
-          #Loop over the next n steps
-          for (i in 2:n) { 
-            #Generate the sample for X
-            X[i]<-rnorm(1,data[2]+input$rho*(Y[i-1]-data[2]),sqrt(1-input$rho^2))
-            Y[i]<-rnorm(1,data[1]+input$rho*(X[i]-data[1]),sqrt(1-input$rho^2))
-          }
-          return(cbind(X,Y))
-        }
-        sampler<-Gibbs
-        #}}}
-      } else { 
-        stop(paste("model",input$model_type,"not yet implemented for gibbs")) 
-      }
-      #}}}
-    } else if (input$sampler=='mh') { 
-      #Metropolis-Hastings {{{
-      sampler<-MH 
-      #}}}
-    } else { 
-      stop(paste("sampler",input$sampler,"not yet implemented")) 
-    }
+    #Metropolis-Hastings {{{
+    sampler<-MH 
     #}}}
     #}}}
     
