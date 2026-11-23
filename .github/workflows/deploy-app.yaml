@@ -30,7 +30,11 @@ jobs:
 
       - name: Install app dependencies
         shell: Rscript {0}
-        run: pak::pak(unique(renv::dependencies(c("MCMC", "ShiftFitting"))$Package))
+        run: pak::pak(unique(renv::dependencies(c("MCMC", "ShiftFitting", "Conjugate"))$Package))
+
+      - name: Test conjugate explorer
+        shell: Rscript {0}
+        run: source("Conjugate/test_conjugate.R")
 
       - name: Export apps
         shell: Rscript {0}
