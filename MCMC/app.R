@@ -17,6 +17,10 @@ library(bsicons)
 ui <- page_sidebar(fillable = TRUE,
   #Sidebar {{{
   sidebar = sidebar(open = "open", 
+                    p(a("Read the lecture: Metropolis-Hastings",
+                        href = "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3c_html.html")),
+                    p(a("All demonstrations", href = "../")),
+                    helpText("The principle: accepting many moves is not the same as exploring the posterior efficiently. Compare proposal scale, trace behaviour, and dependence between samples."),
                     accordion(  
                       accordion_panel( #Model Parameters ) {{{
                         title = "Model Parameters",

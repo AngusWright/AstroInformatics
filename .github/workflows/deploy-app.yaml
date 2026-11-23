@@ -30,7 +30,15 @@ jobs:
 
       - name: Install app dependencies
         shell: Rscript {0}
-        run: pak::pak(unique(renv::dependencies(c("MCMC", "ShiftFitting", "Conjugate", "Gibbs"))$Package))
+        run: |
+          source("apps.R")
+          pak::pak(unique(renv::dependencies(c(names(apps), "TeachingTools"))$Package))
+
+      - name: Test teaching-page models and interfaces
+        shell: Rscript {0}
+        run: |
+          source("TeachingTools/test_numerics.R")
+          source("TeachingTools/test_pages.R")
 
       - name: Test conjugate explorer
         shell: Rscript {0}
@@ -42,7 +50,9 @@ jobs:
 
       - name: Export apps
         shell: Rscript {0}
-        run: source("deploy.R")
+        run: |
+          source("deploy.R")
+          source("TeachingTools/test_export.R")
 
       - uses: actions/upload-pages-artifact@v3
         with:

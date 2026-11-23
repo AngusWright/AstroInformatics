@@ -7,6 +7,9 @@ ui <- page_sidebar(
   fillable = FALSE,
   sidebar = sidebar(
     open = "open", width = 330,
+    p(a("Read the lecture: The Gibbs Sampler",
+        href = "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3c_html.html#building-an-mcmc-sampler-the-gibbs-sampler")),
+    p(a("All demonstrations", href = "../")),
     accordion(
       accordion_panel(
         "Likelihood and target",

@@ -1,0 +1,76 @@
+intro_notes <- function(section) {
+  paste0("https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section", section, "_html.html")
+}
+astro_notes <- function(section) {
+  paste0("https://anguswright.github.io/LectureNotes/AstroStatistics_", section, ".html")
+}
+app_entry <- function(path, title, description, lecture, section, group, shared = TRUE) {
+  list(path = path, title = title, description = description, lecture = lecture,
+       section = section, group = group, shared = shared)
+}
+
+apps <- list(
+  app_entry("SelectionEffects", "The Universe You Don't Detect",
+            "See how a telescope's limiting magnitude creates an apparent luminosity-distance relation.",
+            astro_notes(1), "Detection Effects and Malmquist Bias", "Priority demonstrations"),
+  app_entry("EddingtonBias", "Noise Creates Massive Galaxies",
+            "Watch symmetric measurement errors distort a steep stellar-mass distribution.",
+            astro_notes(1), "Eddington Bias", "Priority demonstrations"),
+  app_entry("HierarchicalModels", "Many Noisy Stars, One Population",
+            "Compare independent estimates, complete pooling, and partial pooling of stellar velocities.",
+            intro_notes("4c"), "Hierarchical Models", "Priority demonstrations"),
+  app_entry("ModelEvidence", "Is That Spectral Line Real?",
+            "Discover why a better best fit does not always mean stronger Bayesian evidence.",
+            intro_notes("4b"), "Bayesian Model Comparison", "Priority demonstrations"),
+  app_entry("MultipleTesting", "A Sky Full of False Discoveries",
+            "Search a noise-only sky and distinguish local significance from a whole-survey false alarm.",
+            intro_notes("4a"), "Significance and Variable Selection", "Priority demonstrations"),
+  app_entry("Marginalisation", "From Posterior Landscape to Scientific Answer",
+            "Integrate a joint distribution and see why a tall peak need not contain the most probability.",
+            intro_notes("3b"), "Multi-parameter Models", "Priority demonstrations"),
+  app_entry("BaseRates", "Why Reliable Detectors Still Find Impostors",
+            "Learn why rare-event prevalence changes the meaning of a positive detection.",
+            intro_notes("2b"), "Conditional Probability and Anomaly Detection", "Priority demonstrations"),
+  app_entry("PosteriorPredictive", "Knowing the Mean Is Not Predicting the Next Star",
+            "Separate uncertainty in a population mean from uncertainty in a future measurement.",
+            intro_notes("3c"), "Predictive Distributions", "Priority demonstrations"),
+  app_entry("Conjugate", "Conjugate Priors and the Role of Data",
+            "Explore exact Bayesian updates and the relative information in a prior and a dataset.",
+            paste0(intro_notes("3b"), "#conjugate-priors"), "Conjugate Priors and the Role of Data",
+            "Existing inference tools", shared = FALSE),
+  app_entry("Gibbs", "Gibbs Sampling: One Conditional at a Time",
+            "Animate exact conditional draws, coordinate moves, and the formation of a joint sample.",
+            paste0(intro_notes("3c"), "#building-an-mcmc-sampler-the-gibbs-sampler"), "The Gibbs Sampler",
+            "Existing inference tools", shared = FALSE),
+  app_entry("MCMC", "Metropolis-Hastings MCMC",
+            "Investigate proposal scale, acceptance, and the efficiency of posterior exploration.",
+            intro_notes("3c"), "The Metropolis-Hastings Algorithm", "Existing inference tools", shared = FALSE),
+  app_entry("ShiftFitting", "Shift Fitting under Heteroskedasticity",
+            "Compare inference under constant and varying measurement uncertainty.",
+            intro_notes("4b"), "Fitting a Model", "Existing inference tools", shared = FALSE),
+  app_entry("ForwardModelling", "Uncertain Encounters, Many Possible Galaxies",
+            "A statistical companion to the Holmberg prototype: propagate uncertain encounter parameters into tidal predictions.",
+            intro_notes("2d"), "Simulation and Monte Carlo Simulations", "Simulation companion"),
+  app_entry("Correlation", "Correlations That Disappear",
+            "Condition on a shared distance effect to understand an apparent relation between galaxy properties.",
+            astro_notes(1), "Interpreting Correlation", "Further foundations"),
+  app_entry("SurveyShift", "A Classifier under Alien Skies",
+            "Move a colour classifier between surveys and see how calibration and noise affect validation.",
+            intro_notes("4c"), "Biases in Machine Learning", "Further foundations"),
+  app_entry("PhotonCounting", "Counting Photons",
+            "Build a photon stream and compare exact Poisson counts with a Gaussian approximation.",
+            intro_notes("2c"), "Poisson and Gaussian Distributions", "Further foundations"),
+  app_entry("CentralLimit", "Why Stacking Works - and When It Doesn't",
+            "Build distributions of sample means and explore a heavy-tailed counterexample to the ordinary CLT.",
+            intro_notes("2c"), "Central Limit Theorem", "Further foundations"),
+  app_entry("InverseSampling", "Turning Uniform Randomness into a Universe",
+            "Follow uniform draws through an inverse CDF into an astronomical population.",
+            intro_notes("2d"), "Inversion Sampling", "Further foundations"),
+  app_entry("RobustStatistics", "One Bad Star",
+            "Drag contaminants through a sample and compare robust and non-robust summaries.",
+            intro_notes("1b"), "Properties of Location and Dispersion Estimates", "Further foundations"),
+  app_entry("DensityEstimation", "Can You Trust That Bump?",
+            "Change bin placement and smoothing without changing a single observed stellar colour.",
+            intro_notes("1b"), "Graphical Distribution Summarisation", "Further foundations")
+)
+names(apps) <- vapply(apps, `[[`, character(1), "path")

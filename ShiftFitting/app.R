@@ -7,6 +7,10 @@ vars <- setdiff(names(iris), "Species")
 
 ui <- page_sidebar(
   sidebar = sidebar(open = "open",
+p(a("Read the lecture: Fitting a Model",
+    href = "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4b_html.html")),
+p(a("All demonstrations", href = "../")),
+helpText("The principle: the observation model matters. Unequal uncertainties change the appropriate weighting and the interpretation of a fitted model."),
 selectInput("model_type", "Model Type:",
             c("Linear" = "linear",
               "Gaussian" = "gaussian",

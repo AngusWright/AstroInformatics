@@ -7,6 +7,9 @@ ui <- page_sidebar(
   fillable = FALSE,
   sidebar = sidebar(
     open = "open", width = 330,
+    p(a("Read the lecture: Conjugate Priors and the Role of Data",
+        href = "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3b_html.html#conjugate-priors")),
+    p(a("All demonstrations", href = "../")),
     selectInput(
       "model", "Likelihood / conjugate prior",
       c("Normal / Normal (known variance)" = "normal",

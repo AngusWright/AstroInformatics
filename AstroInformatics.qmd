@@ -4,13 +4,40 @@ title: "AstroInformatics"
 
 ## Astroinformatics
 
-As a resource for teaching and student supervision, I have created a number of web-apps that demonstrate various aspects
-of Astroinformatics and statistical inference. These can be accessed via the below links: 
+Interactive companions to the [Astrostatistics lecture series](https://anguswright.github.io/LectureNotes/IntroductionToStatistics_materials.html).
+Each page highlights one statistical principle, includes a guided experiment, and links to the relevant HTML lecture notes.
 
-[Shift Fitting under Heteroskedasticity](ShiftFitting/)
+## Priority demonstrations
 
-[Metropolis-Hastings MCMC](MCMC/)
+1. [The Universe You Don't Detect](SelectionEffects/) - selection effects and Malmquist bias.
+2. [Noise Creates Massive Galaxies](EddingtonBias/) - Eddington bias.
+3. [Many Noisy Stars, One Population](HierarchicalModels/) - hierarchical inference and partial pooling.
+4. [Is That Spectral Line Real?](ModelEvidence/) - Bayesian model comparison.
+5. [A Sky Full of False Discoveries](MultipleTesting/) - multiple testing.
+6. [From Posterior Landscape to Scientific Answer](Marginalisation/) - marginalisation.
+7. [Why Reliable Detectors Still Find Impostors](BaseRates/) - base rates.
+8. [Knowing the Mean Is Not Predicting the Next Star](PosteriorPredictive/) - posterior prediction.
+
+## Existing inference tools
 
 [Conjugate Priors and the Role of Data](Conjugate/)
 
 [Gibbs Sampling: One Conditional at a Time](Gibbs/)
+
+[Metropolis-Hastings MCMC](MCMC/)
+
+[Shift Fitting under Heteroskedasticity](ShiftFitting/)
+
+## Simulation companion
+
+[Uncertain Encounters, Many Possible Galaxies](ForwardModelling/) - propagating uncertain inputs through a restricted tidal-encounter model; a statistical companion to the Holmberg prototype.
+
+## Further foundations
+
+1. [Correlations That Disappear](Correlation/) - confounding and conditioning.
+2. [A Classifier under Alien Skies](SurveyShift/) - domain shift.
+3. [Counting Photons](PhotonCounting/) - Poisson arrivals and Gaussian approximations.
+4. [Why Stacking Works - and When It Doesn't](CentralLimit/) - the central limit theorem.
+5. [Turning Uniform Randomness into a Universe](InverseSampling/) - inversion sampling.
+6. [One Bad Star](RobustStatistics/) - robust statistics.
+7. [Can You Trust That Bump?](DensityEstimation/) - histograms and KDEs.

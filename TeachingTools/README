@@ -1,0 +1,27 @@
+Shared teaching-page interface
+
+Each lesson has its own app.R, numerical model.R, controls, interpretation,
+and lecture reference. This file supplies only the consistent visual shell,
+reproducible random-number scope, preset handling, and paused-by-default
+animation controls. No remote fonts, JavaScript libraries, or R packages
+beyond shiny and bslib are required.
+
+Run any page with shiny::runApp("SelectionEffects"), replacing the directory
+as needed. Local apps source ../TeachingTools/teaching.R. During Pages export
+deploy.R bundles this shared source into each app so it runs independently
+in the browser, without references outside its exported directory.
+
+The root apps.R catalogue defines gallery ordering, lecture references, and
+which apps need this shared source bundled. deploy.R exports all 20 pages
+and generates docs/index.html from that catalogue. AstroInformatics.qmd
+provides a matching source-page overview.
+
+Tests:
+  Rscript TeachingTools/test_numerics.R
+  Rscript TeachingTools/test_pages.R
+  Rscript TeachingTools/test_export.R (after Rscript deploy.R)
+
+The numerical suite checks probability normalisation, exact updates, limiting
+cases, simulation invariants, sampling distributions, and preservation of data
+when inference or display settings change. The reactive suite exercises every
+page, primary control boundaries, guided examples, plots, and animation.
