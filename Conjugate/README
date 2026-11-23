@@ -1,0 +1,22 @@
+Conjugate Priors and the Role of Data
+
+An exact, interactive Bayesian updating explorer for Normal-Normal (known
+variance), Beta-Binomial, Gamma-Poisson, and Gamma-Gamma (known shape) models.
+Gamma parameters use the shape-rate convention.
+
+The controls specify sufficient statistics rather than simulated observations,
+so changing the prior does not resample the data. Compare prior, normalised
+likelihood, and posterior densities, posterior means and credible intervals,
+and the influence of a fixed prior as sample size increases.
+
+Run locally from the repository root:
+  Rscript -e 'shiny::runApp("Conjugate")'
+
+Run focused numerical and Shiny reactive checks:
+  Rscript Conjugate/test_conjugate.R
+
+Export all apps for GitHub Pages:
+  Rscript deploy.R
+
+Teaching reference:
+https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3b_html.html#conjugate-priors

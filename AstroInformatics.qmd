@@ -10,3 +10,5 @@ of Astroinformatics and statistical inference. These can be accessed via the bel
 [Shift Fitting under Heteroskedasticity](ShiftFitting/)
 
 [Metropolis-Hastings MCMC](MCMC/)
+
+[Conjugate Priors and the Role of Data](Conjugate/)
