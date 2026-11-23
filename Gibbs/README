@@ -1,0 +1,33 @@
+Gibbs Sampling: One Conditional at a Time
+
+An interactive Shiny / Shinylive demonstration of systematic-scan Gibbs
+sampling. The multivariate Gaussian and Student-t examples use a single
+two-dimensional observation, known scale matrix, and a flat location prior.
+A Poisson likelihood with a Gamma-Gamma hierarchy demonstrates positive,
+non-Gaussian posterior parameters. Every update uses an exact full conditional.
+The numerical kernels and target definitions are separate from the interface
+in gibbs.R so additional model families can implement the same interface.
+
+Play or pause individual coordinate updates, step a coordinate or sweep,
+jump to an update, rewind, or display the complete chain. The joint trajectory
+and full-conditional density are synchronised. Playback begins paused.
+
+Two coordinate updates make one complete sweep. Only complete sweeps already
+revealed by playback are used in trace plots, marginal histograms, sample
+summaries, and autocorrelation plots. Burn-in never changes the underlying
+chain. The seed fixes the trajectory, so playback and display changes do not
+resample it. Changing a model or sampling setting generates a new chain and
+rewinds playback. Student-t scales are not standard deviations; Gamma
+parameters use rates rather than scales.
+
+Run locally from the repository root:
+  Rscript -e 'shiny::runApp("Gibbs")'
+
+Run numerical, stationary-distribution, and timed-playback regression tests:
+  Rscript Gibbs/test_gibbs.R
+
+Export all apps for GitHub Pages:
+  Rscript deploy.R
+
+Teaching reference:
+https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3c_html.html#building-an-mcmc-sampler-the-gibbs-sampler

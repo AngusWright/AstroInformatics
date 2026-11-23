@@ -12,3 +12,5 @@ of Astroinformatics and statistical inference. These can be accessed via the bel
 [Metropolis-Hastings MCMC](MCMC/)
 
 [Conjugate Priors and the Role of Data](Conjugate/)
+
+[Gibbs Sampling: One Conditional at a Time](Gibbs/)

@@ -1,7 +1,8 @@
 apps <- c(
   "MCMC" = "Metropolis-Hastings MCMC",
   "ShiftFitting" = "Shift Fitting under Heteroskedasticity",
-  "Conjugate" = "Conjugate Priors and the Role of Data"
+  "Conjugate" = "Conjugate Priors and the Role of Data",
+  "Gibbs" = "Gibbs Sampling: One Conditional at a Time"
 )
 output_dir <- "docs"
 
