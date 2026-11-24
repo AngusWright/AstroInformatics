@@ -1,83 +1,65 @@
 [
   {
     "path": "SelectionEffects",
-    "title": "The Universe You Don't Detect",
+    "title": "Malmquist Bias: The Universe You Don't Detect",
     "description": "See how a telescope's limiting magnitude creates an apparent luminosity-distance relation.",
     "lecture": "https://anguswright.github.io/LectureNotes/AstroStatistics_1.html",
     "section": "Detection Effects and Malmquist Bias",
-    "group": "Priority demonstrations",
+    "group": "Astrostatistics",
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
   },
   {
     "path": "EddingtonBias",
-    "title": "Noise Creates Massive Galaxies",
+    "title": "Eddington Bias: Noise Creates Massive Galaxies",
     "description": "Watch symmetric measurement errors distort a steep stellar-mass distribution.",
     "lecture": "https://anguswright.github.io/LectureNotes/AstroStatistics_1.html",
     "section": "Eddington Bias",
-    "group": "Priority demonstrations",
+    "group": "Astrostatistics",
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
   },
   {
     "path": "HierarchicalModels",
-    "title": "Many Noisy Stars, One Population",
+    "title": "Partial pooling: Noisy Stars, One Population",
     "description": "Compare independent estimates, complete pooling, and partial pooling of stellar velocities.",
     "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4c_html.html",
     "section": "Hierarchical Models",
-    "group": "Priority demonstrations",
+    "group": "Statistics fundamentals",
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
   },
   {
     "path": "ModelEvidence",
-    "title": "Is That Spectral Line Real?",
+    "title": "Bayesian Evidence: Is That Spectral Line Real?",
     "description": "Discover why a better best fit does not always mean stronger Bayesian evidence.",
     "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4b_html.html",
     "section": "Bayesian Model Comparison",
-    "group": "Priority demonstrations",
+    "group": "Statistics fundamentals",
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
   },
   {
     "path": "MultipleTesting",
-    "title": "A Sky Full of False Discoveries",
+    "title": "Looking-elsewhere: A Sky Full of False Discoveries",
     "description": "Search a noise-only sky and distinguish local significance from a whole-survey false alarm.",
     "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4a_html.html",
     "section": "Significance and Variable Selection",
-    "group": "Priority demonstrations",
-    "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
-  },
-  {
-    "path": "Marginalisation",
-    "title": "From Posterior Landscape to Scientific Answer",
-    "description": "Integrate a joint distribution and see why a tall peak need not contain the most probability.",
-    "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3b_html.html",
-    "section": "Multi-parameter Models",
-    "group": "Priority demonstrations",
+    "group": "Statistics fundamentals",
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
   },
   {
     "path": "BaseRates",
-    "title": "Why Reliable Detectors Still Find Impostors",
+    "title": "Anomoly Detection: Why Reliable Detectors Still Find Impostors",
     "description": "Learn why rare-event prevalence changes the meaning of a positive detection.",
     "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2b_html.html",
     "section": "Conditional Probability and Anomaly Detection",
-    "group": "Priority demonstrations",
-    "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
-  },
-  {
-    "path": "PosteriorPredictive",
-    "title": "Knowing the Mean Is Not Predicting the Next Star",
-    "description": "Separate uncertainty in a population mean from uncertainty in a future measurement.",
-    "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3c_html.html",
-    "section": "Predictive Distributions",
-    "group": "Priority demonstrations",
+    "group": "Statistics fundamentals",
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
   },
   {
     "path": "Conjugate",
-    "title": "Conjugate Priors and the Role of Data",
-    "description": "Explore exact Bayesian updates and the relative information in a prior and a dataset.",
+    "title": "Priors and Data: What Matters, and When?",
+    "description": "Explore the role of priors and data, using exact Bayesian updates possible with Congugate prior-posterior pairs.",
     "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3b_html.html#conjugate-priors",
     "section": "Conjugate Priors and the Role of Data",
-    "group": "Existing inference tools",
+    "group": "Posterior inference",
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css"]
   },
   {
@@ -86,7 +68,7 @@
     "description": "Animate exact conditional draws, coordinate moves, and the formation of a joint sample.",
     "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3c_html.html#building-an-mcmc-sampler-the-gibbs-sampler",
     "section": "The Gibbs Sampler",
-    "group": "Existing inference tools",
+    "group": "Posterior inference",
     "static_files": ["index.html", "styles.css", "gibbs.js", "app.js", "../TeachingTools/statistics.js"]
   },
   {
@@ -95,8 +77,26 @@
     "description": "Investigate proposal scale, acceptance, and the efficiency of posterior exploration.",
     "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3c_html.html",
     "section": "The Metropolis-Hastings Algorithm",
-    "group": "Existing inference tools",
+    "group": "Posterior inference",
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css"]
+  },
+  {
+    "path": "Marginalisation",
+    "title": "Marginalisation: From Posterior Landscape to Scientific Answer",
+    "description": "Integrate a joint distribution and see why a tall peak need not contain the most probability.",
+    "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3b_html.html",
+    "section": "Multi-parameter Models",
+    "group": "Posterior inference",
+    "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
+  },
+  {
+    "path": "PosteriorPredictive",
+    "title": "Posterior Predictions: Understanding the Population vs Predicting New Observations",
+    "description": "Separate uncertainty in a population mean from uncertainty in a future measurement.",
+    "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3c_html.html",
+    "section": "Predictive Distributions",
+    "group": "Posterior inference",
+    "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
   },
   {
     "path": "ShiftFitting",
@@ -104,34 +104,34 @@
     "description": "Compare inference under constant and varying measurement uncertainty.",
     "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4b_html.html",
     "section": "Fitting a Model",
-    "group": "Existing inference tools",
+    "group": "Statistics fundamentals",
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css"]
   },
   {
     "path": "ForwardModelling",
-    "title": "Uncertain Encounters, Many Possible Galaxies",
-    "description": "A statistical companion to the Holmberg prototype: propagate uncertain encounter parameters into tidal predictions.",
+    "title": "Forward Models and Uncertainty",
+    "description": "Explore how uncertainty in initial conditions translates into uncertain predictions of tidal features.",
     "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2d_html.html",
     "section": "Simulation and Monte Carlo Simulations",
-    "group": "Simulation companion",
+    "group": "Astrostatistics",
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
   },
   {
     "path": "Correlation",
-    "title": "Correlations That Disappear",
-    "description": "Condition on a shared distance effect to understand an apparent relation between galaxy properties.",
+    "title": "Confounding Correlations",
+    "description": "Explore how hidden confounding variables, such as a shared distance sensitivity, can produce a correlation between galaxy properties.",
     "lecture": "https://anguswright.github.io/LectureNotes/AstroStatistics_1.html",
     "section": "Interpreting Correlation",
-    "group": "Further foundations",
+    "group": "Statistics fundamentals",
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
   },
   {
     "path": "SurveyShift",
-    "title": "A Classifier under Alien Skies",
-    "description": "Move a colour classifier between surveys and see how calibration and noise affect validation.",
+    "title": "Classification under Alien Skies",
+    "description": "Explore how application of a colour classifier between different datasets is biased by calibration and noise.",
     "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4c_html.html",
     "section": "Biases in Machine Learning",
-    "group": "Further foundations",
+    "group": "Astrostatistics",
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
   },
   {
@@ -140,13 +140,13 @@
     "description": "Build a photon stream and compare exact Poisson counts with a Gaussian approximation.",
     "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2c_html.html",
     "section": "Poisson and Gaussian Distributions",
-    "group": "Further foundations",
+    "group": "Astrostatistics",
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
   },
   {
     "path": "CentralLimit",
-    "title": "Why Stacking Works - and When It Doesn't",
-    "description": "Build distributions of sample means and explore a heavy-tailed counterexample to the ordinary CLT.",
+    "title": "Why Stacking Works (and When It Doesn't)",
+    "description": "Explore the central limit theorem: Build distributions of Guassian sample means from non-Gaussian initial samples, and explore a heavy-tailed counterexample.",
     "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2c_html.html",
     "section": "Central Limit Theorem",
     "group": "Further foundations",
@@ -154,8 +154,8 @@
   },
   {
     "path": "InverseSampling",
-    "title": "Turning Uniform Randomness into a Universe",
-    "description": "Follow uniform draws through an inverse CDF into an astronomical population.",
+    "title": "Inversion Sampling: Turning Uniform Randomness into a Universe",
+    "description": "Follow uniform draws through an inverse CDF, and watch as an astronomical population is built in real time.",
     "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2d_html.html",
     "section": "Inversion Sampling",
     "group": "Further foundations",
@@ -163,8 +163,8 @@
   },
   {
     "path": "RobustStatistics",
-    "title": "One Bad Star",
-    "description": "Drag contaminants through a sample and compare robust and non-robust summaries.",
+    "title": "Mean Sensitivity: One Bad Star",
+    "description": "Explore the sensitivity of summary statistics to the presence of outlier populations.",
     "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section1b_html.html",
     "section": "Properties of Location and Dispersion Estimates",
     "group": "Further foundations",
@@ -172,8 +172,8 @@
   },
   {
     "path": "DensityEstimation",
-    "title": "Can You Trust That Bump?",
-    "description": "Change bin placement and smoothing without changing a single observed stellar colour.",
+    "title": "Binning is Sinning!",
+    "description": "Explore biases in sample visualisation caused by finite binning, compared to kernal density approximations.",
     "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section1b_html.html",
     "section": "Graphical Distribution Summarisation",
     "group": "Further foundations",

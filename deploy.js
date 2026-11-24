@@ -60,7 +60,7 @@ function gallery() {
   const sections = groups.map(group => {
     const cards = tools.filter(tool => tool.group === group).map((tool, i) => `
       <article class="card">
-        <span class="eyebrow">${group === "Priority demonstrations" ? `Start here / ${String(i + 1).padStart(2, "0")}` : "Browser-native demonstration"}</span>
+        <span class="eyebrow">${group === "Posterior inference" ? `Start here / ${String(i + 1).padStart(2, "0")}` : "Browser-native demonstration"}</span>
         <h3><a href="${tool.path}/">${escape(tool.title)}</a></h3>
         <p>${escape(tool.description)}</p>
         <div class="card-links">
@@ -95,13 +95,13 @@ function gallery() {
   <header>
     <span class="eyebrow">Astroinformatics / Interactive lecture companions</span>
     <h1>See the statistics.</h1>
-    <p>Explore the principles behind astronomical inference, one clear visual experiment at a time. Change a few assumptions, reveal the hidden truth, and follow the evidence.</p>
+    <p>Explore principles behind astronomical inference, one visual experiment at a time. Change a few assumptions, reveal the hidden truth, and follow the evidence.</p>
     <a href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_materials.html">Open the lecture series</a>
   </header>
   <main>
-    <p>All ${tools.length} demonstrations run entirely in your browser, with no installation or runtime downloads. Start with the numbered priority lessons, or revisit a familiar inference tool. Every page links to its lecture notes and explains its assumptions.</p>
+    <p>All ${tools.length} demonstrations run entirely in your browser, with no installation or runtime downloads. Explore biases in inference, methods of sampling, and more. Every page links to relevant lecture notes, and explains any underlying assumptions.</p>
     ${sections}
-    <p class="note">These are controlled teaching simulations, not analyses of real survey data. The encounter demonstration is a restricted statistical companion, not a self-consistent N-body calculation. Original R implementations remain available as <a href="https://github.com/AngusWright/Astroinformatics/blob/main/apps.R">reference source</a>.</p>
+    <p class="note">These are controlled teaching simulations, not analyses of real survey data.</a>.</p>
   </main>
   <footer>Astroinformatics &middot; Statistical principles for astronomers and physicists</footer>
 </body>
