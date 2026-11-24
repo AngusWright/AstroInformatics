@@ -1,7 +1,7 @@
 "use strict";
 const assert = require("node:assert/strict");
 require("../TeachingTools/lesson_browser_test.js").runLessonBrowser("Correlation", async b => {
-  assert.equal(await b.evaluate("document.title"), "Correlations That Disappear");
+  assert.equal(await b.evaluate("document.title"), "Confounding Correlations");
   const fullR = await b.text("full-r");
   assert.ok(Number(fullR) > 0.6);
   assert.ok(Math.abs(Number(await b.text("intrinsic-r"))) < 0.08);

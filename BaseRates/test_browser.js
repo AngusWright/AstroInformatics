@@ -1,7 +1,7 @@
 "use strict";
 const assert = require("node:assert/strict");
 require("../TeachingTools/lesson_browser_test.js").runLessonBrowser("BaseRates", async b => {
-  assert.equal(await b.evaluate("document.title"), "Why Reliable Detectors Still Find Impostors");
+  assert.equal(await b.evaluate("document.title"), "Anomoly Detection: Why Reliable Detectors Still Find Impostors");
   assert.equal(await b.text("ppv"), "48.97%");
   assert.equal(await b.text("candidate-count"), "86 / 175");
   assert.ok(await b.hasColour("mosaic", [8, 127, 140]));

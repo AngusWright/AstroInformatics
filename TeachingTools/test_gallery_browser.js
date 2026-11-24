@@ -5,10 +5,12 @@ const tools = require("../html-tools.json");
 
 process.env.HTML_SITE_ROOT = process.env.HTML_SITE_ROOT || "_site";
 runBrowser("", async b => {
+  const groups = [...new Set(tools.map(tool => tool.group))];
+  const orderedTools = groups.flatMap(group => tools.filter(tool => tool.group === group));
   const cards = await b.evaluate('[...document.querySelectorAll(".card h3 a")].map(link => [link.textContent, link.getAttribute("href")])');
-  assert.deepEqual(cards, tools.map(tool => [tool.title, `${tool.path}/`]));
+  assert.deepEqual(cards, orderedTools.map(tool => [tool.title, `${tool.path}/`]));
   const headings = await b.evaluate('[...document.querySelectorAll("main section > h2")].map(node => node.textContent)');
-  assert.deepEqual(headings, [...new Set(tools.map(tool => tool.group))]);
+  assert.deepEqual(headings, groups);
   assert.ok(await b.evaluate("document.documentElement.scrollWidth <= innerWidth"));
   await b.screenshot("gallery-desktop.png");
   await b.call("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 2, mobile: false });

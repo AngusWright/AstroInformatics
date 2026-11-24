@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const { runLessonBrowser } = require("../TeachingTools/lesson_browser_test.js");
 
 runLessonBrowser("CentralLimit", async b => {
-  assert.equal(await b.evaluate("document.title"), "Why Stacking Works - and When It Doesn't");
+  assert.equal(await b.evaluate("document.title"), "Why Stacking Works (and When It Doesn't)");
   assert.equal(await b.evaluate('document.querySelector(".lecture-link").href'),
     "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2c_html.html");
   assert.equal(await b.text("stack-n"), "30");

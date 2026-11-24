@@ -12,6 +12,8 @@ async function runBrowser(page, suite) {
   const root = path.resolve(__dirname, "..", process.env.HTML_SITE_ROOT || ".");
   const directory = path.join(root, page);
   assert.ok(page === "" || /^[A-Za-z][A-Za-z0-9_-]*$/.test(page), "Invalid tool directory");
+  const tool = require("../html-tools.json").find(tool => tool.path === page);
+  if (page) assert.ok(tool, `${page}: missing catalogue entry`);
   const route = page ? `/${page}/` : "/", name = page || "Gallery";
   const html = await readFile(path.join(directory, "index.html"), "utf8");
   const files = new Map([[route, path.join(directory, "index.html")],
@@ -104,6 +106,19 @@ async function runBrowser(page, suite) {
     async function healthy() {
       if (page) assert.equal(await evaluate('document.getElementById("error").hidden'), true, await text("error"));
       assert.deepEqual(exceptions, []);
+      if (page) {
+        assert.deepEqual(await evaluate(`({
+          title: document.title,
+          heading: document.querySelector("h1")?.textContent,
+          description: document.querySelector('meta[name="description"]')?.content,
+          group: document.querySelector(".masthead .eyebrow")?.textContent
+        })`), {
+          title: tool.title,
+          heading: tool.title,
+          description: tool.description,
+          group: `Astroinformatics / ${tool.group}`
+        }, `${page}: page metadata differs from the catalogue`);
+      }
     }
     async function navigate(url = base) {
       await evaluate("delete document.documentElement?.dataset.ready");

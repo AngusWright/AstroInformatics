@@ -1,5 +1,7 @@
-Why Stacking Works - and When It Doesn't
+Why Stacking Works (and When It Doesn't)
 ======================================
+
+Group: Further foundations
 
 Open index.html directly (file://), or serve this directory with its sibling
 TeachingTools directory. No R, Shiny, WebR, external library, build, install or

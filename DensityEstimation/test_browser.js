@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const { runLessonBrowser } = require("../TeachingTools/lesson_browser_test.js");
 
 runLessonBrowser("DensityEstimation", async b => {
-  assert.equal(await b.evaluate("document.title"), "Can You Trust That Bump?");
+  assert.equal(await b.evaluate("document.title"), "Binning is Sinning!");
   assert.equal(await b.evaluate('document.querySelector(".lecture-link").href'),
     "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section1b_html.html");
   assert.equal(await b.text("objects"), "200"); assert.equal(await b.text("hist-area"), "1.000");

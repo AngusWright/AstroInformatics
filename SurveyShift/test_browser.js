@@ -1,7 +1,7 @@
 "use strict";
 const assert = require("node:assert/strict");
 require("../TeachingTools/lesson_browser_test.js").runLessonBrowser("SurveyShift", async b => {
-  assert.equal(await b.evaluate("document.title"), "A Classifier under Alien Skies");
+  assert.equal(await b.evaluate("document.title"), "Classification under Alien Skies");
   assert.ok(await b.hasColour("classification-plot", [233, 244, 243]), "Show the star decision region");
   assert.ok(await b.hasColour("classification-plot", [239, 237, 248]), "Show the quasar decision region");
   assert.ok(await b.hasColour("classification-plot", [213, 101, 52]), "Ring the actual classification errors");

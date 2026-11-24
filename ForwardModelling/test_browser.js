@@ -1,7 +1,7 @@
 "use strict";
 const assert = require("node:assert/strict");
 require("../TeachingTools/lesson_browser_test.js").runLessonBrowser("ForwardModelling", async b => {
-  assert.equal(await b.evaluate("document.title"), "Uncertain Encounters, Many Possible Galaxies");
+  assert.equal(await b.evaluate("document.title"), "Forward Models and Uncertainty");
   assert.equal(await b.text("model-time"), "8.0");
   assert.ok(await b.hasColour("encounter-plot", [8, 127, 140]), "The nominal disc must be plotted");
   assert.ok(await b.hasColour("encounter-plot", [213, 101, 52]), "The nominal perturber must be plotted");

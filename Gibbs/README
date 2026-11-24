@@ -1,5 +1,7 @@
 Gibbs Sampling: One Conditional at a Time
 
+Group: Posterior inference
+
 An interactive, standalone HTML/CSS/JavaScript demonstration of systematic-scan
 Gibbs sampling. No Shiny, WebR, installation, CDN, or runtime download is needed.
 Open index.html directly, or serve this directory with any static web server.

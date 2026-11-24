@@ -1,7 +1,7 @@
 "use strict";
 const assert = require("node:assert/strict");
 require("../TeachingTools/lesson_browser_test.js").runLessonBrowser("PosteriorPredictive", async b => {
-  assert.equal(await b.evaluate("document.title"), "Knowing the Mean Is Not Predicting the Next Star");
+  assert.equal(await b.evaluate("document.title"), "Posterior Predictions: Understanding the Population vs Predicting New Observations");
   for (const colour of [[80, 89, 166], [8, 127, 140], [213, 101, 52]])
     assert.ok(await b.hasColour("predictive", colour), "All three uncertainty distributions must be plotted");
   assert.ok(await b.hasColour("observations", [213, 101, 52]));

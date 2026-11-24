@@ -1,7 +1,7 @@
 "use strict";
 const assert = require("node:assert/strict");
 require("../TeachingTools/lesson_browser_test.js").runLessonBrowser("MultipleTesting", async b => {
-  assert.equal(await b.evaluate("document.title"), "A Sky Full of False Discoveries");
+  assert.equal(await b.evaluate("document.title"), "Looking-elsewhere: A Sky Full of False Discoveries");
   assert.equal(await b.text("tested"), "1600 / 1600");
   assert.equal(await b.text("global-p"), "88.48%");
   assert.equal(await b.text("discoveries"), "0 / 0");

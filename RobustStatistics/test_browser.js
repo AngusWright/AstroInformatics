@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const { runLessonBrowser } = require("../TeachingTools/lesson_browser_test.js");
 
 runLessonBrowser("RobustStatistics", async b => {
-  assert.equal(await b.evaluate("document.title"), "One Bad Star");
+  assert.equal(await b.evaluate("document.title"), "Mean Sensitivity: One Bad Star");
   assert.equal(await b.evaluate('document.querySelector(".lecture-link").href'),
     "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section1b_html.html");
   assert.ok(await b.hasColour("sample-plot", [213, 101, 52]));

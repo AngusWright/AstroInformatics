@@ -1,6 +1,8 @@
 Shift Fitting under Heteroskedasticity
 ====================================
 
+Group: Statistics fundamentals
+
 Open index.html directly, or serve this repository as static files. Keep
 ../TeachingTools/statistics.js, browser.js and browser.css at their relative
 paths. No build, packages, remote assets, Shiny server or network is required.

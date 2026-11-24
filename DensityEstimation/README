@@ -1,5 +1,7 @@
-Can You Trust That Bump?
+Binning is Sinning!
 =======================
+
+Group: Further foundations
 
 Open index.html directly (file://), retaining its sibling TeachingTools
 directory, or serve them statically. The HTML lesson needs no R, Shiny,

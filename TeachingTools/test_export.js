@@ -31,8 +31,10 @@ test("gallery order, lectures, overview and all local links work beneath the Git
   const base = new URL("https://example.test/Astroinformatics/");
   const gallery = fs.readFileSync(path.join(OUTPUT, "index.html"), "utf8");
   const overview = fs.readFileSync(path.join(ROOT, "AstroInformatics.qmd"), "utf8");
+  const groups = [...new Set(tools.map(tool => tool.group))];
+  const orderedTools = groups.flatMap(group => tools.filter(tool => tool.group === group));
   let previous = -1;
-  for (const tool of tools) {
+  for (const tool of orderedTools) {
     const position = gallery.indexOf(`href="${tool.path}/"`);
     assert.ok(position > previous, `${tool.path}: missing or out-of-order gallery link`);
     previous = position;

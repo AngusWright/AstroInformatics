@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const { runLessonBrowser } = require("../TeachingTools/lesson_browser_test.js");
 
 runLessonBrowser("InverseSampling", async b => {
-  assert.equal(await b.evaluate("document.title"), "Turning Uniform Randomness into a Universe");
+  assert.equal(await b.evaluate("document.title"), "Inversion Sampling: Turning Uniform Randomness into a Universe");
   assert.equal(await b.evaluate('document.querySelector(".lecture-link").href'),
     "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2d_html.html");
   assert.equal(await b.text("revealed"), "500");

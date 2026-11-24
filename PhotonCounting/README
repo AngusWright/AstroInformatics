@@ -1,6 +1,8 @@
 Counting Photons
 ================
 
+Group: Astrostatistics
+
 Open index.html directly (file://), or serve it beside TeachingTools. Native
 offline HTML/Canvas/JavaScript; no Shiny, WebR, CDN, modules or installation.
 app.R and model.R remain unchanged reference sources.

@@ -1,6 +1,8 @@
 Metropolis-Hastings MCMC — standalone browser demonstration
 =========================================================
 
+Group: Posterior inference
+
 Open index.html directly, or serve this repository with any static web server.
 Keep MCMC/ beside TeachingTools/: the shared CSS, Canvas helpers and numerical
 utilities are local relative assets. No Shiny, WebR, packages, fonts, CDNs or

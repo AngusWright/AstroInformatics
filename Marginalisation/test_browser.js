@@ -1,7 +1,7 @@
 "use strict";
 const assert = require("node:assert/strict");
 require("../TeachingTools/lesson_browser_test.js").runLessonBrowser("Marginalisation", async b => {
-  assert.equal(await b.evaluate("document.title"), "From Posterior Landscape to Scientific Answer");
+  assert.equal(await b.evaluate("document.title"), "Marginalisation: From Posterior Landscape to Scientific Answer");
   assert.equal(await b.text("broad-mass"), "65%");
   assert.equal(await b.text("interval-mass"), "15.25%");
   assert.ok(Number(await b.text("mode")) < 0);

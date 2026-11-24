@@ -1,4 +1,6 @@
-# Knowing the Mean Is Not Predicting the Next Star
+# Posterior Predictions: Understanding the Population vs Predicting New Observations
+
+Group: Posterior inference
 
 Open index.html directly, or serve it alongside TeachingTools. This is native
 HTML/Canvas with local seeded simulation and analytic Normal inference.
