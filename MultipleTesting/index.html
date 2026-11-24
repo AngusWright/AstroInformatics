@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Search a simulated sky and distinguish local significance, global false alarms and false discoveries.">
+  <title>A Sky Full of False Discoveries</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script>
+  <script src="model.js" defer></script><script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>A sky full of false discoveries</h1><p>A rare noise peak at one chosen position need not be rare somewhere in a survey.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4a_html.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Search settings</summary>
+        <form id="controls" novalidate>
+          <label for="side">Resolution elements per side <output for="side"></output></label>
+          <input id="side" type="range" min="5" max="60" step="1" value="40">
+          <label for="threshold">Detection threshold (sigma) <output for="threshold"></output></label>
+          <input id="threshold" type="range" min="1.5" max="5" step="0.1" value="3">
+          <label for="tails">What counts as a detection?</label>
+          <select id="tails"><option value="one">Positive peaks</option><option value="two">Either sign</option></select>
+          <fieldset><legend>Optional signal injection</legend>
+            <label for="signal_fraction">Real-source fraction <output for="signal_fraction"></output></label>
+            <input id="signal_fraction" type="range" min="0" max="0.1" step="0.005" value="0">
+            <label for="amplitude">Source amplitude (sigma) <output for="amplitude"></output></label>
+            <input id="amplitude" type="range" min="0" max="8" step="0.1" value="4">
+            <p class="hint">Default: noise only, just like the R lesson. Optional positive sources distinguish true and false discoveries.</p>
+          </fieldset>
+          <label for="seed">Random seed</label><input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <div class="transport"><button id="redraw" type="button">New realisation</button><button id="reset" type="button">Reset</button></div>
+      </details>
+      <h2>Guided examples</h2>
+      <div class="transport">
+        <button type="button" data-preset="small">Small search</button>
+        <button type="button" data-preset="large">Large search</button>
+        <button type="button" data-preset="sources">Some real sources</button>
+      </div>
+      <p class="local-note">Independent standard-Normal noise. Threshold, tail choice and playback reuse the same sky. No data leave your browser.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>Local p, whole-search false-alarm probability, and the fraction of discoveries that are false answer different questions.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Lesson views">
+        <button id="tab-explore" role="tab" aria-selected="true" aria-controls="panel-explore" tabindex="0">Explore</button>
+        <button id="tab-explain" role="tab" aria-selected="false" aria-controls="panel-explain" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="transport" aria-label="Cached search animation">
+          <button id="rewind" type="button">Rewind</button><button id="play" class="primary" type="button" aria-pressed="false">Play animation</button>
+          <button id="step" type="button">Step</button><button id="finish" type="button">Finish</button>
+          <label for="frame">Search (%)</label><input id="frame" type="range" min="0" max="100" step="1" value="100">
+          <span id="frame-label">100 / 100</span>
+          <label for="delay">Pace</label><select id="delay"><option value="100">Fast</option><option value="200" selected>Normal</option><option value="500">Slow</option></select>
+        </div>
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric">Locations searched<strong id="tested" data-result></strong></div>
+          <div class="metric">Local null p at threshold<strong id="local-p" data-result></strong></div>
+          <div class="metric">Global null false alarm / FWER<strong id="global-p" data-result></strong></div>
+          <div class="metric">Expected false discoveries<strong id="expected" data-result></strong></div>
+          <div class="metric">True / false discoveries<strong id="discoveries" data-result></strong></div>
+          <div class="metric">Realised false discovery fraction<strong id="fdp" data-result></strong></div>
+        </div>
+        <div class="plot-grid">
+          <article class="card"><h2 id="sky-title">A noise-only sky</h2>
+            <canvas id="sky" role="img" aria-label="Independent Gaussian sky cells. Orange circles mark false detections; teal circles mark injected-source detections."></canvas>
+            <div class="legend"><span>Blue: negative noise; peach: positive</span><span class="orange">Orange ring: false discovery</span><span class="green">Teal ring: true discovery</span></div>
+          </article>
+          <article class="card"><h2>Rare locally, common over a large search</h2>
+            <canvas id="risk" role="img" aria-label="Global probability of at least one false positive versus independent null locations searched; dashed horizontal line is local p."></canvas>
+            <div class="legend"><span class="blue">Purple: global false-alarm probability</span><span class="orange">Dashed: local p</span><span class="green">Teal dot: current search</span></div>
+          </article>
+        </div>
+        <p id="search-summary" class="notice"></p>
+        <p class="hint">Unsearched cells stay grey. Colours are clipped at &plusmn;3 sigma for display only; threshold decisions use the full values. FWER uses the number of searched null cells, not injected sources.</p>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol><li>Compare <strong>Small search</strong> and <strong>Large search</strong> at the same 3-sigma threshold. Local significance is unchanged; survey risk is not.</li>
+          <li>Rewind and replay. The sky is cached: animation reveals existing cells rather than generating new noise.</li>
+          <li>Select <strong>Either sign</strong>. A predeclared two-sided search doubles the single-location null probability.</li>
+          <li>Try <strong>Some real sources</strong>. Compare sensitivity to real sources with the fraction of detections that are false.</li></ol>
+        <h2>Three distinct probabilities</h2>
+        <p>For a threshold z, the local null tail probability is p = &Phi;(&minus;z), or 2&Phi;(&minus;z) for either sign. This is a false-positive probability at a prespecified location, not P(source is false | detection). For an individual cell, its observed p-value would use its observed z rather than the chosen threshold.</p>
+        <p>For N<sub>0</sub> independent null locations, the family-wise error rate is P(V &ge; 1) = 1 &minus; (1 &minus; p)<sup>N<sub>0</sub></sup>. The calculation uses log1p/expm1 to retain small probabilities. The expected number of false positives, E[V] = N<sub>0</sub>p, is a count and may exceed one.</p>
+        <p>The realised false discovery proportion (FDP) is V/(T+V), where T and V are the true and false discoveries in this one survey. FDR is the expectation of FDP over repeated surveys, conventionally assigning FDP = 0 to a run with no discoveries. The page labels an empty observed fraction “no discoveries”, not an estimated posterior probability. In the noise-only model, every discovery is false and FDR = FWER; with injected sources, FDR and FWER generally differ.</p>
+        <h2>Assumptions and the browser extension</h2>
+        <p>Each cell is one independent resolution element, not necessarily a camera pixel. PSFs and resampling correlate real pixels. Choosing thresholds, masks or extra searches after seeing the image changes the procedure.</p>
+        <p>The R lesson contains no real sources. Its default is retained. The optional extension independently marks each cell as a source with the specified probability and adds a fixed positive amplitude to its Gaussian noise. Truth is known only in this simulation. Global false-alarm calculations then condition on the realised number of null cells; no multiple-testing FDR-control procedure is being applied.</p>
+        <p>The browser uses its own seeded generator, not R's random stream. Changing area keeps overlapping linear-index cells fixed; changing threshold or tails never changes observations.</p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run this local demonstration.</p></noscript>
+      <footer>Browser-native HTML and Canvas. No Shiny, WebR, runtime downloads or data upload.</footer>
+    </main>
+  </div>
+</body>
+</html>

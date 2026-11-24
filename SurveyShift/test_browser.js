@@ -1,0 +1,51 @@
+"use strict";
+const assert = require("node:assert/strict");
+require("../TeachingTools/lesson_browser_test.js").runLessonBrowser("SurveyShift", async b => {
+  assert.equal(await b.evaluate("document.title"), "A Classifier under Alien Skies");
+  assert.ok(await b.hasColour("classification-plot", [233, 244, 243]), "Show the star decision region");
+  assert.ok(await b.hasColour("classification-plot", [239, 237, 248]), "Show the quasar decision region");
+  assert.ok(await b.hasColour("classification-plot", [213, 101, 52]), "Ring the actual classification errors");
+  await b.evaluate(`globalThis.trainingSample = lesson.result.training;
+    globalThis.frozenRule = lesson.result.model;
+    globalThis.sourcePrediction = lesson.result.originalPrediction;
+    globalThis.targetSample = JSON.stringify(lesson.result.target);
+    Math.random = () => { throw new Error("Unseeded randomness"); };`);
+  const sourceAccuracy = await b.text("original-accuracy");
+  await b.change("view", "original"); await b.healthy();
+  assert.match(await b.text("plot-heading"), /Independent validation/);
+  assert.equal(await b.evaluate("JSON.stringify(lesson.result.target) === targetSample"), true);
+  await b.change("view", "target"); await b.change("offset", 0); await b.change("noise", 0);
+  assert.ok(await b.evaluate("lesson.result.frozenAccuracy > 0.95"));
+  await b.change("offset", 1.5);
+  assert.ok(await b.evaluate("lesson.result.frozenAccuracy < 0.8"));
+  assert.equal(await b.text("original-accuracy"), sourceAccuracy);
+  assert.equal(await b.evaluate("lesson.result.training === trainingSample && lesson.result.model === frozenRule && lesson.result.originalPrediction === sourcePrediction"), true,
+    "Deployment changes must never refit or redraw source training");
+  await b.evaluate("globalThis.shiftedTarget = JSON.stringify(lesson.result.target)");
+  await b.change("adaptation", "known"); await b.healthy();
+  assert.ok(await b.evaluate("lesson.result.adaptedAccuracy > 0.95"));
+  assert.equal(await b.evaluate("JSON.stringify(lesson.result.target) === shiftedTarget"), true);
+  await b.change("adaptation", "unlabelled"); await b.healthy();
+  assert.match(await b.text("correction-note"), /Unlabelled batch/);
+  assert.ok(await b.evaluate("lesson.result.adaptedAccuracy > 0.95"));
+  await b.change("adaptation", "known"); await b.change("noise", 1.2);
+  assert.ok(await b.evaluate("lesson.result.adaptedAccuracy < 0.9"));
+  assert.equal(await b.evaluate("document.querySelectorAll('#validation-table tr').length"), 3);
+  assert.equal(await b.evaluate(`(() => {
+    const errors = [...document.querySelectorAll("#validation-table tr")][2].querySelectorAll("td");
+    return Number(errors[1].textContent)+Number(errors[2].textContent) ===
+      lesson.result.adaptedPrediction.filter((value,i)=>value!==lesson.result.labels[i]).length;
+  })()`), true);
+  await b.change("offset", -2); await b.healthy();
+  await b.change("view", "not-a-survey");
+  assert.equal(await b.evaluate('document.getElementById("error").hidden'), false);
+  await b.click("reset"); await b.healthy();
+  await b.change("adaptation", "target-labels");
+  assert.equal(await b.evaluate('document.getElementById("error").hidden'), false);
+  assert.equal(await b.text("adapted-accuracy"), "—");
+  await b.click("reset"); await b.click("redraw");
+  await b.evaluate("globalThis.nextTraining = lesson.result.training");
+  await b.change("offset", 2); await b.change("view", "original");
+  assert.equal(await b.evaluate("lesson.result.training === nextTraining && lesson.generation === 1"), true);
+  await b.click("reset");
+}).catch(error => { console.error(error); process.exitCode = 1; });

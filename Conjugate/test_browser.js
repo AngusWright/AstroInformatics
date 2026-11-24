@@ -60,4 +60,9 @@ runBrowser("Conjugate", async b => {
   assert.ok(await evaluate("document.documentElement.scrollWidth <= innerWidth"));
   await b.screenshot("conjugate-mobile.png");
   await b.openFile(); await change("model", "gamma"); await healthy();
+  await b.call("Page.navigate", { url: "about:blank" });
+  await b.waitFor('document.URL === "about:blank" && document.readyState === "complete"');
+  await evaluate("document.documentElement.remove()");
+  await b.navigate();
+  assert.equal(await text("sample-size"), "10");
 }).catch(error => { console.error(error); process.exitCode = 1; });

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Symmetric Gaussian measurement errors, asymmetric migration, and a steep mass function: explore Eddington bias with conserved counts.">
+  <title>Noise Creates Massive Galaxies</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>Noise creates massive galaxies</h1>
+      <p>Symmetric errors reshape the rare, high-mass tail. The galaxies do not gain any physical mass.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/AstroStatistics_1.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Population and measurement</summary>
+        <form id="controls" novalidate>
+          <label for="noise">Log-mass error SD (dex) <output for="noise"></output></label>
+          <input id="noise" type="range" min="0" max="0.6" step="0.02" value="0.3">
+          <label for="slope">Population fall-off per dex, k <output for="slope"></output></label>
+          <input id="slope" type="range" min="0.3" max="3" step="0.1" value="1.5">
+          <p class="hint">True counts ∝ exp[−k(x − 8.5)], for 8.5 ≤ x ≤ 12.</p>
+          <label for="threshold">High-mass threshold, log₁₀(M/M☉) <output for="threshold"></output></label>
+          <input id="threshold" type="range" min="9.5" max="11.5" step="0.1" value="10.5">
+          <label for="seed">Random seed</label>
+          <input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <fieldset><legend>Guided examples</legend>
+          <div class="transport"><button type="button" data-preset="no-scatter">No scatter</button><button type="button" data-preset="steep-noisy">Steep and noisy</button></div>
+        </fieldset>
+        <div class="transport"><button id="redraw" type="button">New realisation</button><button id="reset" type="button">Reset</button></div>
+        <p class="hint">Noise changes scale the same cached Gaussian errors. Threshold changes only reclassify the same measurements. Only slope changes the parent population; the underlying uniform draws stay fixed.</p>
+      </details>
+      <p class="local-note">8,000 simulated galaxies, none discarded. This is a finite-boundary toy mass function, not an observed survey.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>Equal chances of scattering up or down do not imply equal numbers crossing a threshold in each direction.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Demonstration views">
+        <button id="tab-explore" role="tab" aria-controls="panel-explore" aria-selected="true" tabindex="0">Explore</button>
+        <button id="tab-explain" role="tab" aria-controls="panel-explain" aria-selected="false" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric">Crossed into high-mass sample<strong id="up" data-result>—</strong></div>
+          <div class="metric">Crossed out of high-mass sample<strong id="down" data-result>—</strong></div>
+          <div class="metric">Net change in high-mass counts<strong id="net" data-result>—</strong></div>
+          <div class="metric">Measured high-mass count<strong id="observed-high" data-result>—</strong></div>
+        </div>
+        <article class="card">
+          <h2>Unbiased log-mass errors; altered population counts</h2>
+          <canvas id="mass-plot" role="img" aria-label="True and measured mass histograms with the analytic true density, exact Gaussian convolution and high-mass threshold."></canvas>
+          <div class="legend"><span style="color:#087f8c">— True density</span><span style="color:#d56534">— Convolved density</span><span style="color:#7f8a9b">Grey bars: true sample</span><span style="color:#d56534">Orange bars: measured sample</span><span>– – Threshold</span></div>
+          <p class="hint">Both histograms have common 0.1-dex bins and unit total area. The axes include every simulated mass throughout playback; analytic curves are not renormalised to this plotting window.</p>
+        </article>
+        <div class="transport" aria-label="Cached measurement-error animation">
+          <button id="play" class="primary" type="button" aria-pressed="false">Play animation</button>
+          <button id="step" type="button">Step</button><button id="rewind" type="button">Rewind</button><button id="finish" type="button">Show result</button>
+          <label for="delay">Pace</label><select id="delay"><option value="100">Fast</option><option value="200" selected>Normal</option><option value="500">Slow</option></select>
+        </div>
+        <label for="frame">Error reveal: <span id="frame-label">60 / 60</span></label>
+        <input id="frame" type="range" min="0" max="60" step="1" value="60" style="width:100%">
+        <p id="phase-note" class="notice" data-result></p>
+        <h2>Every galaxy is accounted for</h2>
+        <div class="table-wrap">
+          <table aria-label="Threshold migration bookkeeping"><thead><tr><th>True mass</th><th>Measured below</th><th>Measured at / above</th><th>Total</th></tr></thead><tbody id="migration"></tbody></table>
+        </div>
+        <p class="hint">A positive net count is a property of this realisation, not a guaranteed outcome. “High mass” includes equality with the threshold. Neither scatter nor a threshold creates or removes galaxies.</p>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol>
+          <li>Choose <strong>No scatter</strong>, then increase measurement error without changing the underlying galaxies. The two histograms coincide at zero error.</li>
+          <li>Choose <strong>Steep and noisy</strong>. Compare upward and downward crossings, not just how many points move up or down.</li>
+          <li>Move the threshold. Then replay: each galaxy follows its own fixed error draw from zero to the chosen SD.</li>
+        </ol>
+        <h2>Symmetric noise is not symmetric migration</h2>
+        <p>True log-mass x follows a truncated exponential on [8.5, 12]. Its slope k is a natural-exponential rate per dex, not a power-law exponent in base 10. Each measurement is y = x + σz with z ∼ Normal(0,1), independently for each galaxy. Errors are unbiased in log-mass, not necessarily in linear mass.</p>
+        <pre>f(x) = k exp[−k(x − L)] / [1 − exp(−k(U − L))]
+f_observed(y) = ∫ from L to U f(x) Normal(y | x, σ²) dx
+L = 8.5, U = 12</pre>
+        <p>The orange curve evaluates this normalised convolution analytically, including both finite boundaries. No untruncated exponential approximation is used. At zero noise it equals the true density, including its sharp boundaries. Tiny tails use reflected Gaussian probabilities to avoid the R formula's possible round-off when subtracting two CDF values near one.</p>
+        <p>A declining population supplies many lower-mass candidates for upward crossings but few high-mass candidates for downward crossings. The net effect depends on slope, noise, curvature, boundaries and threshold. An individual finite realisation need not have more upward crossings.</p>
+        <h2>Count conservation</h2>
+        <pre>measured high = true high + upward crossings − downward crossings
+measured low + measured high = true low + true high = 8,000</pre>
+        <p>The table includes measurements outside the true [8.5, 12] support; these are valid noisy measurements and are not clipped, rejected or silently dropped. The animation increases the error scale on cached draws; it is illustrative, not repeated independent measurement or physical mass growth.</p>
+        <p><a href="https://anguswright.github.io/LectureNotes/AstroStatistics_1.html">Lecture: Eddington Bias and Monte Carlo Realisations</a></p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run this local demonstration.</p></noscript>
+      <footer>Browser-native Canvas, seeded simulation and an analytic finite-boundary convolution. No runtime downloads.</footer>
+    </main>
+  </div>
+</body>
+</html>

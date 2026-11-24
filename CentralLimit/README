@@ -1,0 +1,81 @@
+Why Stacking Works - and When It Doesn't
+======================================
+
+Open index.html directly (file://), or serve this directory with its sibling
+TeachingTools directory. No R, Shiny, WebR, external library, build, install or
+network connection is needed for the HTML lesson. app.R and model.R remain
+unchanged and available as the original R implementation.
+
+Lecture:
+https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2c_html.html
+
+Explore
+-------
+Choose exponential observations, a 95/5 Gaussian mixture with rare bright
+outliers, or standard Cauchy errors. Controls retain 1-100 measurements per
+average and 200-3000 independent experiments. The original guided examples
+(one measurement, large stack, Cauchy counterexample) and lecture guidance
+are retained. Rewind/play grows each independent stack using its cached
+sequence. Explain describes assumptions, equations and tail truncation.
+
+For exponential and mixture observations the sampling plot shows
+sqrt(n)*(average-mu)/sigma against Normal(0,1). Their moments are known:
+(mu, variance) = (1,1) and (0.25,2.1875), respectively. The raw average has
+SD sigma/sqrt(n); the CLT is asymptotic, not exact at small n.
+
+Cauchy population mean and variance are undefined. Its raw averages are
+exactly standard Cauchy for every n, with population IQR 2. The page never
+standardises them using invented moments. The displayed finite-run IQR is
+an empirical summary, not a population moment or a standard error.
+
+Intentional HTML differences
+---------------------------
+* Uses Astro.createRng(seed), not R's RNG: equal seed numbers produce
+  different individual draws, with the same statistical laws.
+* Caches 3000 independent sequences of length 100, plus 8000 separate
+  observations for the population illustration. Changing n or experiment
+  count selects stable prefixes; playback and resizing never resimulate.
+  At most one seed/population cache is retained by the UI.
+* Uses 100 percentage frames rather than R's 60; frame zero means one
+  measurement, not an empty average. Starts paused at the final frame.
+* Adds a finite-run raw-average IQR and analytic population curve.
+  Histograms retain all observations in their denominator even when the
+  fixed plotting window excludes tails; excluded counts are visible.
+* Seed supports the shared browser range 0 through 2147483647.
+
+Model API
+---------
+model.js is pure browser/CommonJS code (CentralLimitModel in the browser):
+  populations
+    Metadata: mean, variance (both null for Cauchy), limits, label.
+  validate(parameters)
+    Checks seed, population, n and repetitions; throws Astro.ValidationError.
+  populationDensity(population, x)
+    Analytic density of an individual observation.
+  prepare(seed, population)
+    Returns seed, population, observations and a 300000-element Float64Array
+    of cumulative sums, indexed experiment*100 + (n-1).
+  compute(parameters, prepared?)
+    Validates settings and an optional matching cache; returns data,
+    a parameters snapshot and population metadata without drawing a frame.
+  atFrame(result, frame=100)
+    Returns n, means, statistic, finite, meanSd and empiricalIqr.
+    Cauchy meanSd is null and statistic is the unstandardised means.
+
+Files and validation
+--------------------
+Runtime: index.html, model.js, app.js, plus
+../TeachingTools/{statistics.js,browser.js,browser.css,lesson.js}.
+No additional runtime assets are required. README and test files are not
+part of the seven-file runtime.
+
+From the repository root, with Node 22+ and Chrome installed:
+  node --test CentralLimit/test_model.js
+  env -u HTML_SITE_ROOT TMPDIR="$PWD/CentralLimit" node CentralLimit/test_browser.js
+
+Numerical tests cover known moments, exact synthetic stack arithmetic,
+finite-variance standardisation, nonshrinking Cauchy quantiles, cached
+prefixes, omitted tails and invalid settings. The shared real-browser
+runner plus custom assertions cover all populations/control boundaries,
+visible Canvas changes, new-realisation stability, playback, presets,
+reset, validation, accessible tabs, mobile layout and offline file loading.

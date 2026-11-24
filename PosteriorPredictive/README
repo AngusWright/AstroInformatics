@@ -1,0 +1,72 @@
+# Knowing the Mean Is Not Predicting the Next Star
+
+Open index.html directly, or serve it alongside TeachingTools. This is native
+HTML/Canvas with local seeded simulation and analytic Normal inference.
+No R, Shiny, WebR or network access is needed at runtime.
+The existing app.R/model.R remain unchanged as scientific references.
+
+Lecture: https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3c_html.html
+
+## Model and interpretation
+
+The simulated true population mean is 2 km/s. Stellar velocities have known
+intrinsic SD tau; measurements add independent noise with known SD sigma.
+The proper mean prior is Normal(0,5^2). Given n observations x, let
+S=tau^2+sigma^2, V=1/(1/25+n/S), and m=V*sum(x)/S.
+The three Normal distributions share mean m but have variances:
+
+- Population mean: V.
+- Next latent stellar velocity: V+tau^2.
+- Next measured velocity: V+tau^2+sigma^2.
+
+More data reduce V, not the irreducible future scatter. Rows are independently
+peak-scaled to compare widths; their shaded areas/heights are not comparable
+probability masses. Each central interval contains 95% under its own
+distribution. Only the mean interval is a parameter credible interval.
+
+## Intentional differences from R
+
+- The model, defaults, Normal prior and nested 300-star design are unchanged.
+- Astro.createRng(seed) replaces R's generator, so random realisations are not
+  bitwise identical to R. Increasing n uses prefixes of the same observations.
+  Dispersion changes transform the same standard-Normal draws; hiding data
+  and resizing do not change observations. There is no gratuitous animation.
+- Intervals use qnorm(.975)=1.9599639845... rather than R's plotted 1.96.
+  This small accuracy improvement is also disclosed in the Explain tab.
+- Added observation and analytic SD-versus-n plots, a variance/interval table
+  and a display-only data-visibility control. Seed range is 0..2147483647.
+- Known dispersions, certain membership and no selection are retained
+  assumptions, not estimated quantities or silently added uncertainties.
+
+## Files and exports
+
+Runtime: index.html, model.js, app.js, and shared TeachingTools/statistics.js,
+browser.js, lesson.js, browser.css. No additional runtime assets.
+Pure CommonJS/browser global PosteriorPredictiveModel exports:
+predictiveNormal(x, intrinsic, measurement, priorSd=5) and compute(parameters).
+The posterior includes mean, named mean/star/measurement variances, exact
+central 95% intervals and observationVariance.
+compute parameters: seed, n, intrinsic, measurement, show_data.
+Expected invalid settings throw Astro.ValidationError.
+
+## Validation
+
+From the repository root, with Node 22+ and Chrome:
+
+    node PosteriorPredictive/test_model.js
+    mkdir -p PosteriorPredictive/.browser-profile
+    env -u HTML_SITE_ROOT TMPDIR="$PWD/PosteriorPredictive/.browser-profile" node PosteriorPredictive/test_browser.js
+    rmdir PosteriorPredictive/.browser-profile
+
+Numerical tests preserve the test_numerics.R oracle for x=[1,2,3], tau=1,
+sigma=2: mean=1.875; variances=[1.5625,2.5625,6.5625]. They also check
+independent retained-R/qnorm values, large-n irreducible variance differences,
+zero intrinsic scatter, invalid data and nested fixed-seed observations.
+
+    Rscript -e 'source("PosteriorPredictive/model.R"); print(predictive_normal(c(1,2,3),1,2))'
+
+Browser tests inspect all three real density colours, exact equality of mean
+and latent-star intervals at zero intrinsic scatter, correct predictive floors,
+observations surviving n/display changes and small-noise boundaries, plus the
+shared presets/reset, seed validation, keyboard tabs, mobile and offline-file
+checks.

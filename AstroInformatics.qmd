@@ -7,7 +7,11 @@ title: "AstroInformatics"
 Interactive companions to the [Astrostatistics lecture series](https://anguswright.github.io/LectureNotes/IntroductionToStatistics_materials.html).
 Each page highlights one statistical principle, includes a guided experiment, and links to the relevant HTML lecture notes.
 
-## Priority demonstrations
+## Browser-native HTML tools
+
+These pages run entirely in the browser without Shiny, WebR, or runtime downloads.
+
+### Priority demonstrations
 
 1. [The Universe You Don't Detect](SelectionEffects/) - selection effects and Malmquist bias.
 2. [Noise Creates Massive Galaxies](EddingtonBias/) - Eddington bias.
@@ -18,7 +22,7 @@ Each page highlights one statistical principle, includes a guided experiment, an
 7. [Why Reliable Detectors Still Find Impostors](BaseRates/) - base rates.
 8. [Knowing the Mean Is Not Predicting the Next Star](PosteriorPredictive/) - posterior prediction.
 
-## Existing inference tools
+### Existing inference tools
 
 [Conjugate Priors and the Role of Data](Conjugate/)
 
@@ -28,11 +32,12 @@ Each page highlights one statistical principle, includes a guided experiment, an
 
 [Shift Fitting under Heteroskedasticity](ShiftFitting/)
 
-## Simulation companion
+### Simulation companion
 
-[Uncertain Encounters, Many Possible Galaxies](ForwardModelling/) - propagating uncertain inputs through a restricted tidal-encounter model; a statistical companion to the Holmberg prototype.
+[Uncertain Encounters, Many Possible Galaxies](ForwardModelling/) - uncertain inputs
+in a restricted tidal-encounter model; not a self-consistent N-body calculation.
 
-## Further foundations
+### Further foundations
 
 1. [Correlations That Disappear](Correlation/) - confounding and conditioning.
 2. [A Classifier under Alien Skies](SurveyShift/) - domain shift.
@@ -41,3 +46,35 @@ Each page highlights one statistical principle, includes a guided experiment, an
 5. [Turning Uniform Randomness into a Universe](InverseSampling/) - inversion sampling.
 6. [One Bad Star](RobustStatistics/) - robust statistics.
 7. [Can You Trust That Bump?](DensityEstimation/) - histograms and KDEs.
+
+All twenty tools are published as native HTML. The original R/Shiny implementations
+remain in the repository as numerical references, registered in
+[apps.R](https://github.com/AngusWright/Astroinformatics/blob/main/apps.R).
+R source and runtime files are not included in the published site.
+
+## Building and deploying
+
+From the repository root, using Node.js 22 or later:
+
+```sh
+node deploy.js
+node TeachingTools/test_tools.js
+HTML_SITE_ROOT=_site node TeachingTools/test_tools.js --browser
+```
+
+Chrome is required for browser tests; `CHROME_BIN` can select its executable.
+No npm packages or R installation are needed for the build or these tests.
+
+`html-tools.json` defines the published tools, gallery order, lecture links,
+and explicit asset manifests. `deploy.js` creates a clean `_site/` containing
+only those HTML/CSS/JavaScript assets, shared browser helpers, and the gallery.
+Serve `_site/` with any static web server, or open its tool pages directly.
+The test runner discovers numerical and browser regressions for every registered
+tool, so additions are included in deployment checks automatically.
+
+GitHub Pages must use **Settings > Pages > Source > GitHub Actions**.
+The **Deploy HTML teaching tools** workflow builds and tests the actual site
+artifact on pull requests and pushes to `main`, and publishes only from `main`.
+The historical `docs/` and Quarto outputs are not used by this workflow.
+`deploy.R` and `TeachingTools/test_export.R` are compatibility wrappers for the
+Node build and export checks, not Shinylive exporters.

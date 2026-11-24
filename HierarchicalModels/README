@@ -1,0 +1,66 @@
+HierarchicalModels — Many Noisy Stars, One Population
+====================================================
+
+Open index.html directly, or serve it with TeachingTools alongside. This is a
+local Canvas / JavaScript lesson, with no Shiny, WebR or downloads at runtime.
+Original app.R and model.R remain unchanged.
+
+Model
+-----
+Fourteen true velocities are Normal(1.5, tau^2). Known individual measurement
+SDs run from 0.25 to 1.7 km/s times the uncertainty multiplier. Partial pooling:
+  theta_i | mu ~ Normal(mu,tau^2); x_i | theta_i ~ Normal(theta_i,s_i^2)
+  mu ~ Normal(0,25), with tau KNOWN.
+  V = 1 / [1/25 + sum(1/(tau^2+s_i^2))]
+  m = V sum[x_i/(tau^2+s_i^2)], w_i = tau^2/(tau^2+s_i^2)
+  E(theta_i|x) = w_i x_i + (1-w_i)m
+  Var(theta_i|x) = tau^2 s_i^2/(tau^2+s_i^2) + (1-w_i)^2 V.
+The last term propagates uncertainty in mu; this is not plug-in shrinkage.
+
+Complete pooling fits a separate tau=0 model, even if the simulated dispersion
+is nonzero. No pooling uses independent flat priors and Normal(x_i,s_i^2)
+posteriors. At tau=0 partial and complete pooling agree and retain NONZERO
+uncertainty in the common mean. The individual intervals are marginal 95%
+credible intervals, not simultaneous intervals or future-measurement bounds.
+
+All original controls, precise/uncertain presets and teaching content remain.
+Changing only pooling preserves the exact observations. Changing dispersion
+also changes simulated truths; changing noise rescales the same random errors.
+Animation reuses the cached result and illustrates linear interpolation of
+positions/SDs in 60 steps. Only its final intervals are claimed as posteriors;
+intermediate frames are visibly labelled as illustration, not sequential
+Bayesian updating.
+
+Intentional differences
+-----------------------
+Astro.createRng(seed) replaces R's RNG, preserving reproducibility but not R's
+bitwise draws. The page adds population-mean uncertainty, own-measurement
+weights and a final per-star summary table. In no-pooling mode it explicitly
+reports "Not inferred" for the shared mean rather than exposing the unused
+hierarchical calculation retained internally by the R code. No hierarchy has
+been fitted in that mode. All of these choices are explained in the page.
+
+Numerical API / checks
+---------------------
+CommonJS require("./model.js") / browser HierarchicalModelsModel exports
+defaults, normalHierarchy(x,error,scatter,priorMean=0,priorSd=5),
+compute(parameters), and atPhase(result,phase). Posteriors include individual
+means/variances/weights and populationMean/populationSd (null for no pooling).
+Pure calls validate inputs via Astro.ValidationError.
+
+Run from the repository root with Node 22+:
+  node --test HierarchicalModels/test_model.js
+  TMPDIR="$PWD/HierarchicalModels" node HierarchicalModels/test_browser.js
+
+Tests use independently R-calibrated normal-normal posterior means/variances,
+check shared-mean uncertainty and a nonzero-prior-mean analytic case, exact
+zero-scatter pooling, large-scatter no-pooling limits, unchanged observations
+across inference models, seeded stability and boundaries. Browser tests check
+all three model choices, identical zero-scatter posteriors, interpolation
+warnings and rendered intervals, plus the shared general lesson suite.
+
+Runtime assets (no others)
+-------------------------
+index.html, model.js, app.js, ../TeachingTools/statistics.js,
+../TeachingTools/browser.js, ../TeachingTools/browser.css,
+../TeachingTools/lesson.js.

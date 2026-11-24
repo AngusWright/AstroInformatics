@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compare no pooling, partial pooling and complete pooling with exact normal-normal posteriors for fourteen stellar velocities.">
+  <title>Many Noisy Stars, One Population</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>Many noisy stars, one population</h1>
+      <p>Infer individual stellar velocities and a shared population mean without pretending that every star is identical.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4c_html.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Population and inference</summary>
+        <form id="controls" novalidate>
+          <label for="pooling">Inference model</label>
+          <select id="pooling"><option value="partial">Partial pooling</option><option value="none">No pooling</option><option value="complete">Complete pooling</option></select>
+          <label for="scatter">Intrinsic dispersion, τ (km/s) <output for="scatter"></output></label>
+          <input id="scatter" type="range" min="0" max="3" step="0.1" value="1">
+          <label for="noise">Measurement uncertainty multiplier <output for="noise"></output></label>
+          <input id="noise" type="range" min="0.3" max="3" step="0.1" value="1">
+          <label for="seed">Random seed</label>
+          <input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <fieldset><legend>Guided examples</legend>
+          <div class="transport"><button type="button" data-preset="precise">Precise stars</button><button type="button" data-preset="uncertain">Uncertain stars</button></div>
+        </fieldset>
+        <div class="transport"><button id="redraw" type="button">New realisation</button><button id="reset" type="button">Reset</button></div>
+        <p class="hint">Changing the inference model keeps all observations fixed. Changing dispersion also changes the simulated true velocities; changing measurement noise scales the same cached error draws.</p>
+      </details>
+      <p class="local-note">14 known member stars; true population mean 1.5 km/s. Exact Gaussian inference, not MCMC. No data upload.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>Partial pooling borrows population information most strongly for the least precisely measured objects.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Demonstration views">
+        <button id="tab-explore" role="tab" aria-controls="panel-explore" aria-selected="true" tabindex="0">Explore</button>
+        <button id="tab-explain" role="tab" aria-controls="panel-explain" aria-selected="false" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric">Median individual shift (km/s)<strong id="shift" data-result>—</strong></div>
+          <div class="metric">Population μ posterior mean ± SD<strong id="population" data-result>—</strong></div>
+          <div class="metric">Median weight on own measurement<strong id="weight" data-result>—</strong></div>
+          <div class="metric">Assumed intrinsic dispersion<strong id="assumed-scatter" data-result>—</strong></div>
+        </div>
+        <article class="card">
+          <h2>Individual estimates, shared information</h2>
+          <canvas id="stars-plot" style="height:440px" role="img" aria-label="For each star, a grey measurement interval, purple inferred interval and teal true velocity. The dashed line marks the true population mean."></canvas>
+          <div class="legend"><span style="color:#7f8a9b">● Measurement ± 1.96 SD</span><span style="color:#5059a6">● Inference ± 1.96 SD</span><span style="color:#087f8c">◆ Individual truth / dashed population mean</span></div>
+          <p class="hint">Intervals are for each star's latent velocity, not future measurements. The final purple intervals propagate uncertainty in the population mean; they are not conditional on a plug-in estimate of μ.</p>
+        </article>
+        <div class="transport" aria-label="Pooling illustration">
+          <button id="play" class="primary" type="button" aria-pressed="false">Play animation</button>
+          <button id="step" type="button">Step</button><button id="rewind" type="button">Rewind</button><button id="finish" type="button">Show result</button>
+          <label for="delay">Pace</label><select id="delay"><option value="100">Fast</option><option value="200" selected>Normal</option><option value="500">Slow</option></select>
+        </div>
+        <label for="frame">Pooling illustration: <span id="frame-label">60 / 60</span></label>
+        <input id="frame" type="range" min="0" max="60" step="1" value="60" style="width:100%">
+        <p id="phase-note" class="notice" data-result></p>
+        <details class="advanced"><summary>Final per-star posterior summaries</summary>
+          <p class="hint">This table always describes the final inference, not an intermediate animation frame. A smaller own-measurement weight means stronger pooling, not necessarily a larger absolute shift.</p>
+          <div class="table-wrap"><table aria-label="Final individual posteriors"><thead><tr><th>Star</th><th>Observed</th><th>Known error SD</th><th>Posterior mean</th><th>Posterior SD</th><th>Own-data weight</th></tr></thead><tbody id="stars"></tbody></table></div>
+        </details>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol>
+          <li>Compare <strong>No pooling</strong> and <strong>Partial pooling</strong> on the same stars. Which observations receive the smallest own-data weights?</li>
+          <li>Compare <strong>Precise stars</strong> and <strong>Uncertain stars</strong> at fixed intrinsic dispersion.</li>
+          <li>Try <strong>Complete pooling</strong> when the true population has appreciable scatter. A simpler model can be too restrictive.</li>
+          <li>Set intrinsic dispersion to zero. Partial and complete pooling now agree, but a common uncertain velocity is not a perfectly known velocity.</li>
+        </ol>
+        <h2>The normal–normal hierarchy</h2>
+        <p>Fourteen true velocities are drawn from Normal(1.5, τ²) km/s. Measurement errors are independent Gaussian with known SDs increasing from 0.25 to 1.7 km/s, multiplied by your noise setting. Membership is known and selection is ignored.</p>
+        <pre>θᵢ | μ ∼ Normal(μ, τ²)       xᵢ | θᵢ ∼ Normal(θᵢ, sᵢ²)
+μ ∼ Normal(0, 5²)            τ is known, not estimated
+
+V = 1 / [1/25 + Σ 1/(τ² + sᵢ²)]
+m = V Σ xᵢ/(τ² + sᵢ²)       μ | x ∼ Normal(m, V)
+wᵢ = τ²/(τ² + sᵢ²)
+E(θᵢ | x) = wᵢ xᵢ + (1 − wᵢ)m
+Var(θᵢ | x) = τ²sᵢ²/(τ² + sᵢ²) + (1 − wᵢ)²V</pre>
+        <p>The last term propagates uncertainty in μ. The individual posteriors are correlated through that shared mean. Their plotted intervals are marginal 95% credible intervals (±1.96 SD), not simultaneous 95% coverage of all fourteen stars.</p>
+        <h2>Three different assumptions</h2>
+        <p><strong>Partial pooling</strong> uses the known simulated dispersion. Less precise stars have smaller wᵢ and borrow more population information. The actual shift also depends on how far a measurement lies from the inferred mean.</p>
+        <p><strong>Complete pooling</strong> fits a separate τ = 0 model regardless of the simulated dispersion. Every star then has the same posterior mean and the same nonzero uncertainty. It does not merely draw a line through the noisy data.</p>
+        <p><strong>No pooling</strong> uses independent flat priors, giving Normal(xᵢ, sᵢ²) posteriors. These improper priors yield proper individual posteriors here, but no population-mean posterior is inferred or reported in this mode.</p>
+        <p>Playback interpolates positions and SDs between measurements and the final inference for illustration. Intermediate frames are <strong>not</strong> sequential Bayesian posteriors, and their intervals have no claimed posterior credibility. Only the final intervals are the stated posterior intervals.</p>
+        <p><a href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4c_html.html">Lecture: Hierarchical Models and Building a Model</a></p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run this local demonstration.</p></noscript>
+      <footer>Browser-native Canvas and exact normal–normal inference. No Shiny, WebR or runtime downloads.</footer>
+    </main>
+  </div>
+</body>
+</html>

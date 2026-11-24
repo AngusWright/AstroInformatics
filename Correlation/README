@@ -1,0 +1,59 @@
+Correlations That Disappear
+==========================
+
+Open index.html directly (file://) or serve it beside TeachingTools. Native
+offline HTML/Canvas/JavaScript; no Shiny, WebR, CDN, modules or installation.
+The R reference sources app.R and model.R remain unchanged.
+
+Principle: distinguish shared-distance confounding from intrinsic/conditional
+correlation. X=-2Z+epsilon_x, Y=-2Z+epsilon_y; Z~Uniform(0,1), independent Normal
+intrinsic terms with common SD sigma; n=1800. Whole-population rho=1/(1+3sigma^2).
+Within a clipped distance interval of actual width w,
+rho=(w^2/3)/(w^2/3+sigma^2). These are population values, not the sample r.
+Exact-distance conditional correlation is zero for positive sigma. A finite
+slice retains distance variation. At sigma=0 the intrinsic properties are
+constants and Pearson r is undefined, not zero.
+
+Native differences
+------------------
+Retains the shared-distance generating model, all original controls/presets,
+colour-coded selection, full/slice regressions and lecture link. Adds a
+residual panel (X+2Z,Y+2Z), intrinsic sample correlation and analytic population
+comparisons to make the distinction explicit. Extends scatter down to zero;
+degenerate variance and too-few-object correlations are displayed explicitly.
+This is not causal discovery, fitted residualisation, or a realistic survey:
+selection, uncertain distances and measurement errors are intentionally absent.
+
+The standard Normal draws and distances are cached by seed. Slice/display
+changes never resample observations; scatter rescales the same intrinsic draws.
+New realisation changes the draws; Reset restores defaults. R and browser RNG
+streams differ intentionally. There is no animation because this is a static
+conditioning comparison, not a time series.
+
+Numerical API (model.js, browser CorrelationModel and CommonJS)
+-------------------------------------------------------------
+defaults; SIZE=1800
+validate(parameters)
+prepare(seed) -> cached distance, standard Normal X/Y draws and seed
+statistics(x,y) -> n, means, correlation, slope, intercept
+  Correlation/slope need >=3 observations; correlation is null at zero variance.
+populationCorrelation(scatter, distanceWidth=1) -> rho or null if degenerate
+compute(parameters, optionalPrepared) -> observed/intrinsic arrays, selected
+  mask, full/slice/intrinsic statistics, clipped slice and population rho
+Invalid input throws Astro.ValidationError. Scientific control names/ranges:
+seed integer 0..2147483647; scatter 0..2; centre 0..1; width 0.05..1.
+
+Validation (from the repository root)
+------------------------------------
+node Correlation/test_model.js
+node Correlation/test_browser.js
+Tests include exact hand-calculated correlations, independent population
+limits also used by the retained-R tests, sampling variability, fixed-data
+selection, clipped edge slices, tiny/zero variance, seeded stability and
+boundaries. Chrome checks visible regressions/residual points, real controls,
+no resampling after New realisation, errors, presets, tabs, mobile and file://.
+For a repository-local Chrome profile, create Correlation/.browser-state and
+set TMPDIR to its absolute path for the test, then remove the empty directory.
+
+Runtime assets: index.html, model.js, app.js, plus
+../TeachingTools/{statistics.js,browser.js,browser.css,lesson.js}. No others.

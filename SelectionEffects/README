@@ -1,0 +1,56 @@
+SelectionEffects — The Universe You Don't Detect
+================================================
+
+Open index.html directly, or serve this directory with TeachingTools alongside
+it. This is a browser-native Canvas lesson; R, Shiny and WebR are not runtime
+dependencies. app.R and model.R remain unchanged as the original reference.
+
+Model
+-----
+There are 2,400 galaxies at 30–800 Mpc with uniform spatial density (distance
+cubed is uniform). Independent log10(L/L0) is Normal(0, 0.6^2).
+M = -18 - 2.5 log10(L/L0), m = M + 5 log10(distance/Mpc) + 25.
+An object is detected exactly when m <= the limiting apparent magnitude.
+Nondetections stay in the parent population, even with their overlay hidden.
+The orange distance-bin means omit empty bins and do not bridge their gaps;
+the theoretical mean is zero, not the finite sample's exact mean.
+
+The original controls, shallow/deep examples, guide and explanation are
+retained. Animation tightens the limit from 26 to the selected 17–24 magnitude
+limit in 60 cached-data steps. All distances/luminosities are fixed on playback,
+resize, display changes and comparison of magnitude limits.
+
+Intentional differences
+-----------------------
+Astro.createRng(seed) replaces R's generator, so identical browser seeds are
+reproducible but are not bitwise-identical to set.seed(seed) in R. The full
+generated luminosity range is visible rather than clipping the R plot at fixed
+y-limits. Displayed counts explicitly include missing objects. There are no
+cosmological, K-correction or measurement-error approximations hidden here:
+these effects are excluded from the toy model and explained on the page.
+
+Numerical API / reference checks
+-------------------------------
+model.js exports defaults, compute(parameters), observed(logLuminosity,
+distance, limit), threshold(distance, limit), and atPhase(result, phase).
+CommonJS: require("./model.js"); browser: SelectionEffectsModel.
+compute returns distance, luminosity, targetLimit and a final selection
+summary; atPhase returns counts, completeness, detection flags and bin means.
+Expected input failures use Astro.ValidationError, including invalid pure
+Node calls. Seeds are integers in [0, 2147483647].
+
+Run from the repository root with Node 22+:
+  node --test SelectionEffects/test_model.js
+  TMPDIR="$PWD/SelectionEffects" node SelectionEffects/test_browser.js
+
+The numerical tests independently check the magnitude relation and inclusive
+edge, R-calibrated detection values, empty-bin/no-detection behaviour, nested
+selections, count conservation and seeded stability. Browser tests check the
+nondetection overlay, magnitude boundaries and cached animation, plus the
+shared preset/reset/error/accessibility/mobile/file:// suite.
+
+Runtime assets (no others)
+-------------------------
+index.html, model.js, app.js, ../TeachingTools/statistics.js,
+../TeachingTools/browser.js, ../TeachingTools/browser.css,
+../TeachingTools/lesson.js.

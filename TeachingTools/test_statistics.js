@@ -47,3 +47,21 @@ test("distributions respect support and proper parameterisation", () => {
     assert.throws(action, A.ValidationError);
   }
 });
+
+test("sample quantiles interpolate like R type 7 without reordering observations", () => {
+  const observations = [10, 1, 5, 2];
+  for (const [probability, expected] of [[0, 1], [0.1, 1.3], [0.25, 1.75], [0.5, 3.5], [0.9, 8.5], [1, 10]]) {
+    near(A.quantile(observations, probability), expected, 1e-14);
+  }
+  assert.deepEqual(observations, [10, 1, 5, 2]);
+  assert.throws(() => A.quantile([], 0.5), A.ValidationError);
+});
+
+test("histograms close the last bin and retain omitted tail probability", () => {
+  const histogram = A.histogram([-2, 0, 1, 1.5, 2, 3, 4], [0, 1, 2, 4]);
+  assert.deepEqual(histogram.counts, [1, 2, 3]);
+  assert.equal(histogram.excluded, 1);
+  near(histogram.density.reduce((sum, height, i) => sum + height * histogram.widths[i], 0), 6 / 7, 1e-15);
+  assert.deepEqual(A.histogram([], [0, 1, 2]).density, [0, 0]);
+  assert.throws(() => A.histogram([1], [0, 0, 2]), A.ValidationError);
+});

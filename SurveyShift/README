@@ -1,0 +1,76 @@
+A Classifier under Alien Skies
+==============================
+
+Open index.html directly (file://), or serve it beside TeachingTools. Native
+offline HTML/Canvas/JavaScript; no Shiny, WebR, CDN, modules or installation.
+app.R and model.R remain unchanged retained reference sources.
+
+Principle: validation only represents its measurement/deployment conditions.
+Two Gaussian colour populations have means (+/-0.8,+/-0.4), independent SDs
+0.35 and 0.45, and equal class frequencies. A source LDA is trained on 400
+objects using sample class means and the average within-class sample covariance.
+Both independent validation samples contain 400 objects, 200 per class. Target
+colours add (offset,0.4*offset) and independent Gaussian noise per colour.
+The source classifier uses equal priors and assigns exact boundary ties to 0.
+
+Frozen source; honest correction
+--------------------------------
+Source training, source validation, intrinsic target colours and standardised
+target noise are cached by seed. Target offset/noise, view and adaptation
+changes NEVER regenerate or refit source training. Truth is used only for
+accuracy, class styling and error rings, never target adaptation.
+
+The original uncorrected rule is retained. Added optional comparisons:
+* Known external calibration subtracts the specified simulated offset, as an
+  idealised independent-calibration benchmark. This uses known calibration
+  information, not target labels, and does not remove measurement noise.
+* Unlabelled mean alignment subtracts mean(target features)-mean(source training
+  features), without any class labels. Evaluation on that same unlabelled batch
+  is transductive. It assumes a shared class mixture and an additive shift;
+  sample fluctuations, changed class proportions or complex shifts can harm it.
+
+Explain explicitly distinguishes domain/measurement shift from the narrower
+pure-covariate-shift assumption, and warns that choosing a correction using
+displayed target accuracies tunes on validation labels. An actual deployment
+needs a separate final test set. This balanced toy is not a realistic quasar
+survey; decision-region shading is a class, not a correctness probability.
+
+Native differences
+------------------
+Preserves all original controls, presets, LDA equations, population sizes,
+original/new-survey comparison and lecture link. Adds the optional corrections,
+side-by-side accuracy metrics and per-class validation error counts. Plots keep
+common axes between original/target views. No animation (the comparison is
+static). New realisation advances a seeded Astro RNG; Reset restores defaults.
+R/browser RNG streams differ, but fixed-data LDA agrees with retained-R fixtures.
+
+Numerical API (model.js, browser SurveyShiftModel and CommonJS)
+-------------------------------------------------------------
+defaults; SIZE=400; validate(parameters)
+fitClassifier(twoColourRows, binaryLabels)
+  -> weight, threshold, class means, pooled covariance
+predict(model, twoColourRows, correction=[0,0]) -> binary predictions
+calibrationCorrection(trainingRows, targetRows, mode, knownOffset)
+  -> two-coordinate correction; modes none / known / unlabelled; no target labels
+accuracy(predictions, labels) -> fraction correct
+prepare(seed) -> fixed source/target base samples, source fit and validation
+compute(parameters, optionalPrepared) -> target observations, frozen/corrected
+  predictions, correction, and all independent validation accuracies
+Rows are [colour1,colour2]. Invalid values and singular training covariance
+throw Astro.ValidationError. Parameters: seed integer 0..2147483647, offset
+-2..2, noise 0..1.2, view target/original, adaptation none/known/unlabelled.
+
+Validation (from the repository root)
+------------------------------------
+node SurveyShift/test_model.js
+node SurveyShift/test_browser.js
+Tests use retained-R LDA fixtures including strict boundary ties, relabelling,
+fixed source data, matched/shifted validation limits, exact calibration recovery,
+irreducible noise, target-label invariance, offset-equivariant mean alignment,
+seed stability, singular covariance and boundaries. Chrome additionally checks
+decision regions, error rings, metrics/table, all choices, mobile and file://.
+For a repository-local Chrome profile, create SurveyShift/.browser-state, set
+TMPDIR to its absolute path for the test, then remove the empty directory.
+
+Runtime assets: index.html, model.js, app.js, plus
+../TeachingTools/{statistics.js,browser.js,browser.css,lesson.js}. No others.

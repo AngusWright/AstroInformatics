@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Propagate uncertain encounter parameters through a restricted tidal toy model. A statistical companion, not a self-consistent galaxy simulation.">
+  <title>Uncertain Encounters, Many Possible Galaxies</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+  <style>.encounter-canvas { height: 440px; } @media (max-width: 800px) { .encounter-canvas { height: 340px; } }</style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>Uncertain encounters</h1>
+      <p>One nominal prediction is only one of many possible outcomes.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2d_html.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Encounter settings</summary>
+        <form id="controls" novalidate>
+          <label for="impact">Mean impact parameter <output for="impact"></output></label>
+          <input id="impact" type="range" min="0.4" max="3" step="0.1" value="1.5">
+          <label for="speed">Mean passage speed <output for="speed"></output></label>
+          <input id="speed" type="range" min="0.6" max="3" step="0.1" value="1.2">
+          <label for="uncertainty">Fractional SD of both parameters <output for="uncertainty"></output></label>
+          <input id="uncertainty" type="range" min="0" max="0.4" step="0.01" value="0.2">
+          <p class="hint">Positive, independent log-normal inputs; stated means and fractional SDs are arithmetic. All physical quantities are in dimensionless model units.</p>
+          <label for="seed">Random seed</label>
+          <input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <div class="transport"><button id="redraw" type="button">New realisation</button><button id="reset" type="button">Reset</button></div>
+        <h2 class="eyebrow">Guided examples</h2>
+        <div class="transport">
+          <button type="button" data-preset="deterministic">One deterministic encounter</button>
+          <button type="button" data-preset="close">Uncertain close encounter</button>
+        </div>
+      </details>
+      <p class="local-note">A restricted statistical companion to the Holmberg prototype, <strong>not</strong> a self-consistent N-body or galaxy-dynamics simulation. No installation or data upload.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>Propagate uncertainty through a forward model: a family of predictions is more informative than one attractive simulation.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Lesson views">
+        <button id="tab-explore" role="tab" aria-selected="true" aria-controls="panel-explore" tabindex="0">Explore</button>
+        <button id="tab-explain" role="tab" aria-selected="false" aria-controls="panel-explain" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="transport" aria-label="Animation controls">
+          <button id="play" type="button" class="primary" aria-pressed="false">Play animation</button>
+          <button id="step" type="button">Step</button><button id="rewind" type="button">Rewind</button>
+          <button id="finish" type="button">Show result</button>
+          <label for="delay">Pace</label><select id="delay"><option value="100">Fast</option><option value="200" selected>Normal</option><option value="500">Slow</option></select>
+        </div>
+        <label for="frame">Integration step <span id="frame-label">80 / 80</span></label>
+        <input id="frame" type="range" min="0" max="80" step="1" value="80" style="width:100%">
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric">Model time<strong id="model-time" data-result></strong></div>
+          <div class="metric">Ensemble members<strong id="member-count" data-result></strong></div>
+          <div class="metric">Beyond radius 2.5: median<strong id="outside-median" data-result></strong></div>
+          <div class="metric">Beyond radius 2.5: range<strong id="outside-range" data-result></strong></div>
+        </div>
+        <article class="card">
+          <h2>A shared initial disc, twelve plausible encounters</h2>
+          <canvas id="encounter-plot" class="encounter-canvas" role="img" aria-label="Nominal particle positions and twelve uncertain encounter predictions in a host-centred plane."></canvas>
+          <div class="legend"><span class="green">Teal: nominal disc</span><span class="blue">Translucent purple: ensemble</span><span class="orange">Orange cross: nominal perturber</span><span>Dark cross: host</span></div>
+          <p class="hint">The grey circle is radius 2.5, not an escape boundary. The viewport is finite; all particles, including those off screen, enter the numerical summaries.</p>
+        </article>
+        <article class="card" style="margin-top:16px">
+          <h2>Uncertainty in a morphological diagnostic</h2>
+          <canvas id="spread-plot" class="small-canvas" role="img" aria-label="Median and full ensemble range of the fraction beyond radius 2.5, revealed up to the current model time."></canvas>
+          <div class="legend"><span class="blue">Purple: median and min–max ensemble band</span><span>Only elapsed model time is revealed</span></div>
+        </article>
+        <p class="notice">Replay reveals cached trajectories. It never redraws initial particles or encounter parameters; every member is compared at the same physical time.</p>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol>
+          <li>Choose <strong>One deterministic encounter</strong>. With zero parameter uncertainty, all twelve members coincide with the nominal prediction.</li>
+          <li>Choose <strong>Uncertain close encounter</strong>, rewind and play. Which morphological features survive the input uncertainty?</li>
+          <li>Change the mean impact parameter or speed. This changes the model encounter, not just its numerical noise. New realisation changes the shared disc and parameter draws; Reset restores seed 42.</li>
+        </ol>
+        <h2>Restricted dynamics, real uncertainty propagation</h2>
+        <p>Forty massless, collisionless test particles start on circular orbits in a unit-mass softened host potential. A half-mass perturber follows the prescribed straight path (−5 + vt, b). Its tidal force includes the indirect acceleration of the host-centred frame.</p>
+        <p>A kick–drift–kick leapfrog integrates 80 equal steps of 0.1, with softening length 0.3. The perturber is not deflected. Disc self-gravity, gas, dynamical friction and a live host are absent. The time step is fixed, not adaptively error-controlled; this is a teaching model, not a precision dynamical calculation.</p>
+        <p>The nominal calculation uses the arithmetic mean impact parameter and speed. Twelve independent pairs use b = b̄ exp(sZ − s²/2) and v = v̄ exp(sZ′ − s²/2), with s² = log(1 + f²), independent standard-Normal Z and Z′, and fractional input SD f. Each pair is drawn once, then held fixed throughout its trajectory. All members share the same initial disc. A nonlinear model’s prediction at the mean inputs need not equal its ensemble mean or median prediction.</p>
+        <p>The diagnostic counts particles at radius greater than 2.5. It is <strong>not an escaped or unbound mass fraction</strong>. The band is the full range of twelve predictions, not a credible or confidence interval. A small ensemble cannot establish tail probabilities. Ensemble spread describes this input distribution under this restricted model; it is not automatically a calibrated posterior or a probability for a real galaxy.</p>
+        <p>The original HolmbergSimulation source remains a separate prototype. This is an astronomical application of the lecture’s simulation principles, not an example reproduced from those notes.</p>
+        <p><a href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2d_html.html">Lecture: Simulation and Monte Carlo Simulations</a></p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run this local demonstration.</p></noscript>
+      <footer>Browser-native HTML and JavaScript. No Shiny, WebR, external services or runtime downloads.</footer>
+    </main>
+  </div>
+</body>
+</html>

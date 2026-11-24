@@ -1,4 +1,4 @@
-name: Deploy Shinylive apps
+name: Deploy HTML teaching tools
 
 on:
   push:
@@ -25,50 +25,20 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Test browser-native inference tools
-        run: |
-          node --test TeachingTools/test_statistics.js Conjugate/test_conjugate.js Gibbs/test_gibbs.js MCMC/test_mcmc.js ShiftFitting/test_shift.js
-          node Conjugate/test_browser.js
-          node Gibbs/test_browser.js
-          node MCMC/test_browser.js
-          node ShiftFitting/test_browser.js
+      - name: Build HTML site
+        run: node deploy.js
 
-      - uses: rstudio/shiny-workflows/setup-r-package@v1
-        with:
-          packages: |
-            renv
-            posit-dev/r-shinylive
-            sessioninfo
+      - name: Test numerical models and HTML artifact
+        run: node TeachingTools/test_tools.js
 
-      - name: Install app dependencies
-        shell: Rscript {0}
-        run: |
-          source("apps.R")
-          pak::pak(unique(renv::dependencies(c(names(apps), "TeachingTools"))$Package))
-
-      - name: Test teaching-page models and interfaces
-        shell: Rscript {0}
-        run: |
-          source("TeachingTools/test_numerics.R")
-          source("TeachingTools/test_pages.R")
-
-      - name: Test conjugate explorer
-        shell: Rscript {0}
-        run: source("Conjugate/test_conjugate.R")
-
-      - name: Test Gibbs sampler and animation
-        shell: Rscript {0}
-        run: source("Gibbs/test_gibbs.R")
-
-      - name: Export apps
-        shell: Rscript {0}
-        run: |
-          source("deploy.R")
-          source("TeachingTools/test_export.R")
+      - name: Test published tools in Chrome
+        env:
+          HTML_SITE_ROOT: _site
+        run: node TeachingTools/test_tools.js --browser
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
+          path: _site
 
   deploy:
     if: github.ref == 'refs/heads/main'
@@ -78,5 +48,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/configure-pages@v5
+
       - id: deployment
         uses: actions/deploy-pages@v4

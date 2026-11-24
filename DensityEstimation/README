@@ -1,0 +1,91 @@
+Can You Trust That Bump?
+=======================
+
+Open index.html directly (file://), retaining its sibling TeachingTools
+directory, or serve them statically. The HTML lesson needs no R, Shiny,
+WebR, external libraries, build, install or network. Original app.R and
+model.R are preserved unchanged.
+
+Lecture:
+https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section1b_html.html
+
+Explore
+-------
+Keep the observed stellar colours fixed while changing bin width
+(0.1-1.5), bin origin (0-1 times the width) and Gaussian KDE bandwidth
+(0.05-1). Sample size remains 50-1000. Undersmoothed, oversmoothed and
+middle-ground presets, original guided examples and lecture link are
+retained. An observation rug makes the fixed sample visible.
+
+The known generating population is
+  0.6*Normal(-0.8,0.35^2) + 0.4*Normal(0.9,0.35^2).
+The teal curve is this truth, not a fit. A visible bump can reflect sample
+noise, binning or smoothing rather than another astrophysical component.
+
+Histogram heights are count/(n*bin width); all bins are in view and their
+total area is 1. The Gaussian KDE is the direct normalized kernel sum:
+  mean_i[normalPdf((x-x_i)/h)/h].
+Its integral is 1 over the real line, not over the finite plotting window.
+The outside-view metric sums Gaussian lower and upper tails directly to
+avoid cancellation from subtracting a nearly-one mass from one. Extremely
+small probabilities can still underflow to zero in floating-point math.
+
+Intentional HTML differences
+---------------------------
+* Uses Astro.createRng(seed) rather than R's RNG: seeds preserve browser
+  reproducibility, not identical R observations. A 1000-object cache is
+  independent of every smoothing control; changing n selects a prefix.
+* Evaluates the exact Gaussian kernel sum at 801 display points, instead
+  of R density()'s binned FFT approximation on 512 points. Density values
+  are direct evaluations; curves between grid points are drawn linearly.
+* Uses shared left-closed histogram bins (last right edge included), not
+  R hist()'s default right-closed bins. Exact-edge values can change bin;
+  no observations are dropped. Bin bounds include floating-point edge
+  cases and all bars, not just their centres, are inside the view.
+* Reports KDE tail probability without renormalisation. The analytic
+  population curve is likewise not renormalised to the viewport.
+* Peak count uses displayed local maxima above 2% of the maximum height.
+  A flat-topped maximum counts once; a shoulder is not an extra maximum.
+  This is grid-, sample- and bandwidth-dependent, NOT a component-count
+  estimate, uncertainty interval, hypothesis test or significance value.
+  It can differ from R's approximate/coarser display.
+* Seed supports the shared browser range 0 through 2147483647.
+
+Model API
+---------
+model.js exports pure CommonJS/browser helpers (DensityEstimationModel):
+  populationDensity(x)
+    Known normalized mixture density, independent of the observations.
+  validate(parameters)
+    Checks seed, n, width, origin and bandwidth with Astro.ValidationError.
+  prepare(seed)
+    Returns {seed, values}, caching the full 1000-observation sequence.
+  kdeAt(values, bandwidth, x)
+    Direct normalized Gaussian sum at a finite evaluation position.
+  kdeMass(values, bandwidth, lower, upper)
+    Analytic KDE probability between finite ordered bounds.
+  kdeOutsideMass(values, bandwidth, lower, upper)
+    Analytic lower-plus-upper tail probability, evaluated stably.
+  countPeaks(densities)
+    Returns display-grid indices of local maxima above the 2% threshold.
+  compute(parameters, prepared?)
+    Returns data, parameters, values, histogram, breaks, limits, x,
+    density, peaks, histogramArea and outsideMass.
+
+Files and validation
+--------------------
+Runtime: index.html, model.js, app.js, plus
+../TeachingTools/{statistics.js,browser.js,browser.css,lesson.js}.
+No extra runtime assets. README and tests are development files only.
+
+From the repository root, using Node 22+ and installed Chrome:
+  node --test DensityEstimation/test_model.js
+  env -u HTML_SITE_ROOT TMPDIR="$PWD/DensityEstimation" node DensityEstimation/test_browser.js
+
+Numerical tests cover mixture and KDE normalisation, R-calibrated density
+and CDF masses, stable tiny tails, exact histogram edge cases and area,
+bin-origin periodicity, fixed observations across all smoothing controls,
+bandwidth-dependent peaks/shoulders and invalid inputs. Real Chrome tests
+confirm visible bin effects without data changes, all control boundaries,
+undersmoothing/oversmoothing and honest tails, seed/reset reproducibility,
+presets, validation, keyboard tabs, mobile layout and offline file loading.

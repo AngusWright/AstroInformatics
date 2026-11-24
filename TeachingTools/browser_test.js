@@ -9,19 +9,21 @@ const { pathToFileURL } = require("node:url");
 const { setTimeout: sleep } = require("node:timers/promises");
 
 async function runBrowser(page, suite) {
-  const root = path.resolve(__dirname, ".."), directory = path.join(root, page);
-  assert.ok(["Gibbs", "Conjugate", "MCMC", "ShiftFitting"].includes(page));
+  const root = path.resolve(__dirname, "..", process.env.HTML_SITE_ROOT || ".");
+  const directory = path.join(root, page);
+  assert.ok(page === "" || /^[A-Za-z][A-Za-z0-9_-]*$/.test(page), "Invalid tool directory");
+  const route = page ? `/${page}/` : "/", name = page || "Gallery";
   const html = await readFile(path.join(directory, "index.html"), "utf8");
-  const files = new Map([[`/${page}/`, path.join(directory, "index.html")],
-    [`/${page}/index.html`, path.join(directory, "index.html")]]);
+  const files = new Map([[route, path.join(directory, "index.html")],
+    [`${route}index.html`, path.join(directory, "index.html")]]);
   for (const match of html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)) {
-    const url = new URL(match[1], `http://localhost/${page}/`);
+    const url = new URL(match[1], `http://localhost${route}`);
     assert.equal(url.origin, "http://localhost", "Runtime assets must be local");
     const file = path.resolve(root, "." + decodeURIComponent(url.pathname));
     assert.ok(file.startsWith(root + path.sep), "Runtime assets must stay within the repository");
     files.set(url.pathname, file);
   }
-  const profile = await mkdtemp(path.join(os.tmpdir(), `${page.toLowerCase()}-chrome-`));
+  const profile = await mkdtemp(path.join(os.tmpdir(), `${name.toLowerCase()}-chrome-`));
   const types = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript" };
   const server = http.createServer(async (req, res) => {
     const pathname = new URL(req.url, "http://localhost").pathname;
@@ -40,7 +42,7 @@ async function runBrowser(page, suite) {
     await new Promise((resolve, reject) => {
       server.once("error", reject); server.listen(0, "127.0.0.1", resolve);
     });
-    const origin = `http://127.0.0.1:${server.address().port}`, base = `${origin}/${page}/`;
+    const origin = `http://127.0.0.1:${server.address().port}`, base = `${origin}${route}`;
     const binary = process.env.CHROME_BIN ||
       (process.platform === "darwin" ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" : "google-chrome");
     chrome = spawn(binary, ["--headless", "--remote-debugging-port=0", `--user-data-dir=${profile}`,
@@ -100,14 +102,15 @@ async function runBrowser(page, suite) {
       input.dispatchEvent(new Event("change", {bubbles:true}));
     })()`);
     async function healthy() {
-      assert.equal(await evaluate('document.getElementById("error").hidden'), true, await text("error"));
+      if (page) assert.equal(await evaluate('document.getElementById("error").hidden'), true, await text("error"));
       assert.deepEqual(exceptions, []);
     }
     async function navigate(url = base) {
-      await evaluate("delete document.documentElement.dataset.ready");
+      await evaluate("delete document.documentElement?.dataset.ready");
       const result = await call("Page.navigate", { url });
       if (result.errorText) throw new Error(result.errorText);
-      await waitFor('document.documentElement.dataset.ready === "true" && document.readyState === "complete"');
+      await waitFor(page ? 'document.documentElement?.dataset.ready === "true" && document.readyState === "complete"' :
+        `location.href === ${JSON.stringify(url)} && document.readyState === "complete"`);
       await healthy();
     }
     async function screenshot(name) {
@@ -137,7 +140,7 @@ async function runBrowser(page, suite) {
     const allowed = new Set([origin + "/favicon.ico", ...[...files].flatMap(([pathname, file]) =>
       [origin + pathname, pathToFileURL(file).href])]);
     assert.ok(requests.every(url => allowed.has(url)), `Unexpected runtime request: ${requests.filter(url => !allowed.has(url)).join(", ")}`);
-    console.log(`${page}: browser interactions, plots, and local-only runtime passed.`);
+    console.log(`${name}: browser interactions, plots, and local-only runtime passed.`);
   } finally {
     for (const request of pending.values()) { clearTimeout(request.timeout); request.reject(new Error("Browser closed")); }
     if (socket) socket.close();

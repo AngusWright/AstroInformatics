@@ -1,0 +1,66 @@
+EddingtonBias — Noise Creates Massive Galaxies
+============================================
+
+Open index.html directly, or serve it with TeachingTools alongside this
+directory. The Canvas lesson runs entirely in JavaScript without Shiny, WebR,
+external downloads or data upload. Original app.R and model.R are unchanged.
+
+Model
+-----
+8,000 true log10 masses follow the NORMALISED truncated exponential
+  f(x) = k exp[-k(x-8.5)] / [1-exp(-3.5k)], 8.5 <= x <= 12.
+k is a natural-exponential rate per dex, not a base-10 power-law exponent.
+Observed log mass is x + sigma*z, with independent standard Normal z.
+The true and measured curves use the exact finite-boundary convolution:
+  k/Z exp[k(L-y)+(k*sigma)^2/2]
+    * [Phi((U-y+k*sigma^2)/sigma)-Phi((L-y+k*sigma^2)/sigma)].
+At zero noise the analytic density is the true truncated density.
+
+Up/down metrics count crossings, not signs of individual errors. The complete
+2x2 migration table verifies measured high = true high + up - down and total
+count = 8,000. Measurements outside the true [8.5,12] bounds remain included.
+The lesson never claims that every finite realisation has positive net bias.
+
+All original controls, presets, guides and explanations are retained. The
+60-step animation scales cached Gaussian draws from zero to the selected SD.
+Threshold changes only reclassify the same observations; noise changes retain
+the true masses. Slope changes transform the same underlying uniform draws.
+
+Intentional differences / R limitations
+--------------------------------------
+Astro.createRng(seed) is reproducible but differs from R's RNG. Both histograms
+are shown, with common 0.1-dex bins covering every simulated value for the whole
+animation. Unlike the R fixed plotting window, no simulated tail is hidden.
+Density normalisation always refers to the full population, not the visible
+window. All histogram counts are retained; excluded is zero in this lesson.
+
+The R expression subtracts positive-tail CDF values that can both round to
+one, losing tiny but resolvable densities. The port uses the equivalent
+reflected-tail difference and log-domain prefactor, without changing the
+underlying model. This numerical difference is explained in the page.
+
+Numerical API / validation
+-------------------------
+CommonJS require("./model.js") / browser EddingtonBiasModel exports defaults,
+massDensity(x, slope, noise=0, lower=8.5, upper=12), compute(parameters), and
+atPhase(result, phase). compute returns true masses, cached standard Normal
+errors, shared bin edges, the true histogram and the final measured summary.
+atPhase returns measurements, histogram, migration counts and noise SD.
+Pure Node calls validate input domains using Astro.ValidationError.
+
+Run from the repository root with Node 22+:
+  node --test EddingtonBias/test_model.js
+  TMPDIR="$PWD/EddingtonBias" node EddingtonBias/test_browser.js
+
+Tests check independently R-calibrated density values, unit-area quadrature
+including tails, the zero-error limit, a positive-tail cancellation case,
+fixed random draws, count conservation at intermediate frames, all control
+boundaries, and invalid inputs. Browser tests add plot-colour checks, zero
+scatter, threshold invariance and migration bookkeeping; the shared suite
+covers presets/reset, playback, errors, keyboard tabs, mobile and file://.
+
+Runtime assets (no others)
+-------------------------
+index.html, model.js, app.js, ../TeachingTools/statistics.js,
+../TeachingTools/browser.js, ../TeachingTools/browser.css,
+../TeachingTools/lesson.js.

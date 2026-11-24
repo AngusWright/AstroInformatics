@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Use Bayes' rule to explore rare-event surveys, detector sensitivity and the identities of flagged candidates.">
+  <title>Why Reliable Detectors Still Find Impostors</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script><script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script><script src="model.js" defer></script><script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>Reliable detectors, unexpected impostors</h1><p>A good detector can still produce mostly false candidates when genuine events are rare.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2b_html.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Population and detector</summary>
+        <form id="controls" novalidate>
+          <label for="log_prevalence">log10 real-event fraction <output for="log_prevalence"></output></label>
+          <input id="log_prevalence" type="range" min="-6" max="-1" step="0.25" value="-2">
+          <label for="sensitivity">Sensitivity P(flag | real) <output for="sensitivity"></output></label>
+          <input id="sensitivity" type="range" min="0.5" max="1" step="0.01" value="0.95">
+          <label for="false_positive">False-positive rate P(flag | not real) <output for="false_positive"></output></label>
+          <input id="false_positive" type="range" min="0" max="0.1" step="0.001" value="0.01">
+          <label for="reveal">Simulated candidate identities</label>
+          <select id="reveal"><option value="show">Reveal truth</option><option value="hide">Hide truth</option></select>
+          <label for="seed">Random seed</label><input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <div class="transport"><button id="redraw" type="button">New realisation</button><button id="reset" type="button">Reset</button></div>
+      </details>
+      <h2>Guided examples</h2>
+      <div class="transport"><button type="button" data-preset="rare">Rare events</button><button type="button" data-preset="common">Commoner events</button><button type="button" data-preset="empty">Possibly no candidates</button></div>
+      <p class="local-note">10,000 independent objects. Playback and hiding identities never change which objects are real or flagged.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>P(real | flagged) is not P(flagged | real). The population base rate matters.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Lesson views">
+        <button id="tab-explore" role="tab" aria-selected="true" aria-controls="panel-explore" tabindex="0">Explore</button>
+        <button id="tab-explain" role="tab" aria-selected="false" aria-controls="panel-explain" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="transport" aria-label="Cached survey animation">
+          <button id="rewind" type="button">Rewind</button><button id="play" class="primary" type="button" aria-pressed="false">Play animation</button>
+          <button id="step" type="button">Step</button><button id="finish" type="button">Finish</button>
+          <label for="frame">Survey (%)</label><input id="frame" type="range" min="0" max="100" step="1" value="100">
+          <span id="frame-label">100 / 100</span>
+          <label for="delay">Pace</label><select id="delay"><option value="100">Fast</option><option value="200" selected>Normal</option><option value="500">Slow</option></select>
+        </div>
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric">Population real-event fraction<strong id="prevalence" data-result></strong></div>
+          <div class="metric">Sensitivity<strong id="efficiency" data-result></strong></div>
+          <div class="metric">Theoretical P(real | flag)<strong id="ppv" data-result></strong></div>
+          <div class="metric">Genuine / all flags this run<strong id="candidate-count" data-result></strong></div>
+          <div class="metric">Realised genuine fraction<strong id="realised" data-result></strong></div>
+          <div class="metric">Objects scanned<strong id="scanned" data-result></strong></div>
+        </div>
+        <div class="plot-grid">
+          <article class="card"><h2>Flagged candidates in this realisation</h2>
+            <canvas id="mosaic" role="img" aria-label="Candidate mosaic: each square is one flagged object, teal for a real event and orange for an impostor. Hidden identities are purple."></canvas>
+            <div id="mosaic-legend" class="legend"></div>
+            <p class="hint">One square = one actual flag, never a rounded expectation. Positions only pack the candidates; they are not sky coordinates.</p>
+          </article>
+          <article class="card"><h2>Expected versus realised flagged counts</h2>
+            <canvas id="counts" role="img" aria-label="Bars compare expected and realised true and false flagged candidate counts for the scanned population."></canvas>
+            <div class="legend"><span class="green">Teal: genuine flags</span><span class="orange">Orange: false flags</span><span>Pale bars: expected; solid: realised</span></div>
+          </article>
+        </div>
+        <p id="bayes-rule" class="notice"></p>
+        <div class="table-wrap"><table aria-label="Expected and realised survey outcomes">
+          <thead><tr><th>Outcome</th><th>Expected count (not rounded to objects)</th><th>Realised count</th></tr></thead><tbody id="outcomes"></tbody>
+        </table></div>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol><li>Keep the detector fixed and compare <strong>Rare events</strong> with <strong>Commoner events</strong>. Sensitivity stays the same, but the meaning of a positive detection changes.</li>
+          <li>Compare the theoretical positive predictive value with the genuine fraction in this one simulated survey. New realisations fluctuate, especially for rare events.</li>
+          <li>Hide identities. The same candidates remain, but only the detector's flags are visible. Theoretical PPV still follows from the model.</li>
+          <li>Try <strong>Possibly no candidates</strong>. With extremely rare events and zero false-positive rate, no observed flags is legitimate; it does not imply a zero theoretical PPV.</li></ol>
+        <h2>Bayes' rule, without rounded pseudo-counts</h2>
+        <p>A real event has probability q = 10<sup>log prevalence</sup>. Its flag probability is sensitivity s; a non-event has flag probability f. These probabilities are known inputs, not estimated performance measurements. All 10,000 objects are independent.</p>
+        <p>P(real | flag) = qs / [qs + (1 &minus; q)f]. Sensitivity is P(flag | real), the reverse conditional. The false-positive rate f is <em>not</em> the fraction of all flags that are false. For N scanned objects, expected genuine and false flags are Nqs and N(1 &minus; q)f. Fractional expectations are meaningful even when less than one.</p>
+        <p>PPV is computed from full-precision probabilities, not from rounded expected or realised counts. Displayed decimal values are approximations. The realised ratio is a random statistic and is undefined when there are no flags. If the model itself gives zero probability of any flag, the conditional PPV is also undefined; that is a different situation.</p>
+        <h2>What the mosaic can and cannot tell you</h2>
+        <p>Every mosaic square represents one actual flagged object in the scanned part of the survey. Expected counts in the other panel and table are not painted as fractional people or rounded to a pretend population. Hiding truth also hides all truth-dependent realised counts and bars; expected counts remain model predictions.</p>
+        <p>Identities are available only because this is a simulation. In real work, prevalence and detector performance are uncertain and may vary across populations. A richer model would propagate that uncertainty.</p>
+        <p>The browser retains the R lesson's model and default settings, uses an independent seeded random stream, and caches the full survey for playback. It extends the log-prevalence range from &minus;4 down to &minus;6 and permits f = 0 to expose rare and empty-survey limits. Animation has 100 percentage steps rather than 60. These changes do not replace the exact Bayesian probability with a sample fraction.</p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run this local demonstration.</p></noscript>
+      <footer>Browser-native HTML and Canvas. No Shiny, WebR, runtime downloads or data upload.</footer>
+    </main>
+  </div>
+</body>
+</html>

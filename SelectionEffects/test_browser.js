@@ -1,0 +1,23 @@
+"use strict";
+const assert = require("node:assert/strict");
+require("../TeachingTools/lesson_browser_test.js").runLessonBrowser("SelectionEffects", async b => {
+  assert.ok(await b.hasColour("selection-plot", [8, 127, 140]), "The population reference must be drawn.");
+  assert.ok(await b.hasColour("selection-plot", [213, 101, 52]), "The detected-bin means must be drawn.");
+  const original = await b.evaluate("JSON.stringify(lesson.result)");
+  const image = await b.evaluate('document.getElementById("selection-plot").toDataURL()');
+  const metrics = await b.text("detected");
+  await b.change("overlay", "hide");
+  assert.equal(await b.evaluate("JSON.stringify(lesson.result)"), original, "Hiding missing galaxies must not delete them.");
+  assert.equal(await b.text("detected"), metrics);
+  assert.notEqual(await b.evaluate('document.getElementById("selection-plot").toDataURL()'), image);
+  await b.change("limit", 17);
+  const shallow = await b.evaluate("lesson.result.final.count");
+  const population = await b.evaluate("JSON.stringify([lesson.result.distance,lesson.result.luminosity])");
+  await b.change("limit", 24);
+  assert.ok(await b.evaluate("lesson.result.final.count") > shallow);
+  assert.equal(await b.evaluate("JSON.stringify([lesson.result.distance,lesson.result.luminosity])"), population);
+  await b.click("rewind");
+  assert.equal(await b.evaluate("lesson.result.final.limit"), 24, "Rewind must not replace the cached final result.");
+  assert.ok((await b.text("plot-heading")).includes("26.0"));
+  await b.click("finish"); await b.healthy();
+}).catch(error => { console.error(error); process.exitCode = 1; });

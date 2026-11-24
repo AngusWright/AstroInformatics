@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Build distributions of independent averages, explore the central limit theorem, and discover why Cauchy errors do not average away.">
+  <title>Why Stacking Works - and When It Doesn't</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>Why stacking works</h1>
+      <p>Average skewed, mixed, or heavy-tailed observations. Find out what changes, and what never does.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2c_html.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Build an averaging experiment</summary>
+        <form id="controls" novalidate>
+          <label for="population">Observation / error population</label>
+          <select id="population">
+            <option value="exponential">Skewed exponential</option>
+            <option value="mixture">Rare bright outliers</option>
+            <option value="cauchy">Cauchy: undefined mean and variance</option>
+          </select>
+          <label for="n">Measurements in each average <output for="n"></output></label>
+          <input id="n" type="range" min="1" max="100" step="1" value="30">
+          <label for="repetitions">Independent averaging experiments <output for="repetitions"></output></label>
+          <input id="repetitions" type="range" min="200" max="3000" step="100" value="1000">
+          <label for="seed">Random seed</label>
+          <input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <h2 class="eyebrow">Guided examples</h2>
+        <div class="transport">
+          <button type="button" data-preset="one">One measurement</button>
+          <button type="button" data-preset="large">Large stack</button>
+          <button type="button" data-preset="cauchy">A counterexample</button>
+        </div>
+        <p class="hint">Rewind and play to grow each stack. More experiments improve the histogram; more measurements change the sampling distribution.</p>
+        <div class="transport"><button id="redraw" type="button">New realisation</button><button id="reset" type="button">Reset</button></div>
+      </details>
+      <p class="local-note">Seeded observations are cached. Playback, resizing and display changes do not draw new data. Runs locally, with no uploads.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>The central limit theorem concerns the distribution of an average, not the shape of the original population. Its assumptions matter.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Demonstration views">
+        <button id="tab-explore" type="button" role="tab" aria-selected="true" aria-controls="panel-explore" tabindex="0">Explore</button>
+        <button id="tab-explain" type="button" role="tab" aria-selected="false" aria-controls="panel-explain" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="transport" aria-label="Animation controls">
+          <button id="play" class="primary" type="button" aria-pressed="false">Play animation</button>
+          <button id="step" type="button">Step</button><button id="rewind" type="button">Rewind</button><button id="finish" type="button">Show result</button>
+          <label for="delay">Pace</label><select id="delay"><option value="100">Fast</option><option value="200" selected>Normal</option><option value="500">Slow</option></select>
+        </div>
+        <label for="frame" class="hint">Stack growth <span id="frame-label">100 / 100</span></label>
+        <input id="frame" type="range" min="0" max="100" step="1" value="100" style="width:100%">
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric"><strong id="stack-n" data-result></strong>Measurements per average now</div>
+          <div class="metric"><strong id="experiments" data-result></strong>Independent experiments</div>
+          <div class="metric"><strong id="mean-sd" data-result></strong>Population SD of the raw average</div>
+          <div class="metric"><strong id="empirical-iqr" data-result></strong>Finite-run IQR of raw averages</div>
+        </div>
+        <p id="moment-note" class="notice"></p>
+        <div class="plot-grid">
+          <article class="card">
+            <h2>The observation population stays the same</h2>
+            <canvas id="population-plot" role="img" aria-label="Histogram of individual observations with the analytic population density"></canvas>
+            <div class="legend"><span class="green">Teal: true population density</span><span class="blue">Bars: 8,000 fixed individual observations</span></div>
+            <p id="population-tails" class="hint"></p>
+          </article>
+          <article class="card">
+            <h2 id="sampling-title">Independent sample means</h2>
+            <canvas id="sampling-plot" role="img" aria-label="Sampling distribution of averages compared with a normal or exact Cauchy reference"></canvas>
+            <div class="legend"><span class="orange">Orange: simulated averages</span><span id="reference-label">Purple: Normal(0,1) reference</span></div>
+            <p id="sampling-tails" class="hint"></p>
+          </article>
+        </div>
+        <p class="hint">A controlled iid simulation, not a fit to a survey. Finite plot windows omit tails without renormalising the bars.</p>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol>
+          <li>Start with one exponential observation per average. Rewind a large stack and watch the lower histogram become more Gaussian while the upper population does not change.</li>
+          <li>Try rare bright outliers. Compare increasing the number of experiments with increasing the measurements in each stack.</li>
+          <li>Select the Cauchy counterexample. Even 100 measurements per stack leave a Cauchy distribution of averages, with an exact central 50% width of 2.</li>
+        </ol>
+        <h2>What is standardised?</h2>
+        <p>Exponential observations have mean 1 and variance 1. The mixture is 95% Normal(0,1) plus 5% Normal(5,1), with mean 0.25 and variance 2.1875. For these finite-variance populations, the lower panel plots Z = &radic;n (x&#772; &minus; &mu;) / &sigma;. The ordinary iid CLT predicts convergence to Normal(0,1), not exact normality at small n. The unstandardised average has SD &sigma;/&radic;n.</p>
+        <h2>Cauchy is not an ordinary CLT example</h2>
+        <p>The standard Cauchy is Student-t with one degree of freedom. Neither its population mean nor its variance exists. The average of independent standard Cauchy draws is exactly standard Cauchy for every n. The lower panel switches to <em>raw averages</em> and an exact Cauchy reference, with no Gaussian standardisation. The population SD metric therefore says “Undefined”.</p>
+        <p>The displayed IQR is an empirical summary of this finite run, not a population moment or an uncertainty on a location estimate. It can fluctuate as the stack grows. In the Cauchy case its theoretical counterpart is 2 for every n; it does not shrink as 1/&radic;n.</p>
+        <h2>What stays fixed, and what this leaves out</h2>
+        <p>The browser caches 3,000 independent sequences of 100 observations and a separate 8,000-point population illustration. Changing n uses prefixes of those sequences; changing the experiment count uses the same first experiments. Animation has 100 percentage steps and starts paused at the result. The seed uses the shared browser RNG, not R's RNG, so identical seed numbers do not reproduce R's individual draws.</p>
+        <p>Histograms use count/(all draws &times; bin width), including draws outside the finite view in their denominator. Neither bars nor reference curves are rescaled to hide omitted tails. Shared calibration errors, correlations, selection bias and changing populations can also defeat naive stacking; they are deliberately absent here.</p>
+      </section>
+      <footer><a href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2c_html.html">Lecture: Central Limit Theorem and the Student t Distribution</a> &middot; <a href="../">All demonstrations</a></footer>
+    </main>
+  </div>
+</body>
+</html>

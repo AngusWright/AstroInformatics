@@ -236,8 +236,40 @@
       values.slice(lag).reduce((sum, x, i) => sum + (x - mean) * (values[i] - mean), 0) / denominator);
   }
 
+  function quantile(values, probability) {
+    check(values.length > 0 && values.every(Number.isFinite), "Quantiles need finite observations.");
+    check(Number.isFinite(probability) && probability >= 0 && probability <= 1, "Probability must be between zero and one.");
+    const sorted = values.slice().sort((a, b) => a - b), position = (sorted.length - 1) * probability;
+    const lower = Math.floor(position), upper = Math.ceil(position);
+    return sorted[lower] + (position - lower) * (sorted[upper] - sorted[lower]);
+  }
+
+  function histogram(values, breaks) {
+    check(values.every(Number.isFinite), "Histogram observations must be finite.");
+    check(breaks.length >= 2 && breaks.every(Number.isFinite) &&
+      breaks.every((value, i) => i === 0 || value > breaks[i - 1]), "Histogram edges must be finite and increasing.");
+    const counts = Array(breaks.length - 1).fill(0);
+    let excluded = 0;
+    for (const value of values) {
+      if (value < breaks[0] || value > breaks[breaks.length - 1]) { excluded++; continue; }
+      let lo = 0, hi = breaks.length - 1;
+      while (hi - lo > 1) {
+        const mid = Math.floor((lo + hi) / 2);
+        if (value < breaks[mid]) hi = mid;
+        else lo = mid;
+      }
+      counts[Math.min(lo, counts.length - 1)]++;
+    }
+    return {
+      counts, excluded,
+      mids: counts.map((_, i) => (breaks[i] + breaks[i + 1]) / 2),
+      density: counts.map((count, i) => values.length ? count / (values.length * (breaks[i + 1] - breaks[i])) : 0),
+      widths: counts.map((_, i) => breaks[i + 1] - breaks[i])
+    };
+  }
+
   const api = { ValidationError, check, createRng, logGamma, normalPdf, normalCdf, normalQuantile,
-    normal, beta, gamma, summarize, acf };
+    normal, beta, gamma, summarize, acf, quantile, histogram };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.Astro = api;
 })(globalThis);

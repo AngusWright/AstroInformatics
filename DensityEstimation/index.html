@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Keep stellar-colour observations fixed while changing histogram bin width, bin origin and Gaussian KDE bandwidth.">
+  <title>Can You Trust That Bump?</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>Can you trust that bump?</h1>
+      <p>The very same stellar colours can look smooth, bimodal, or full of substructure. Change the picture, not the observations.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section1b_html.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Data and smoothing settings</summary>
+        <form id="controls" novalidate>
+          <label for="n">Number of observed objects <output for="n"></output></label>
+          <input id="n" type="range" min="50" max="1000" step="50" value="200">
+          <label for="width">Histogram bin width <output for="width"></output></label>
+          <input id="width" type="range" min="0.1" max="1.5" step="0.05" value="0.4">
+          <label for="origin">Bin origin (fraction of width) <output for="origin"></output></label>
+          <input id="origin" type="range" min="0" max="1" step="0.05" value="0.25">
+          <label for="bandwidth">Gaussian KDE bandwidth <output for="bandwidth"></output></label>
+          <input id="bandwidth" type="range" min="0.05" max="1" step="0.05" value="0.25">
+          <label for="seed">Random seed</label>
+          <input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <h2 class="eyebrow">Guided examples</h2>
+        <div class="transport"><button type="button" data-preset="under">Undersmoothed</button><button type="button" data-preset="over">Oversmoothed</button><button type="button" data-preset="middle">A middle ground</button></div>
+        <p class="hint">Move the bin origin: can a bump disappear without collecting a single new observation?</p>
+        <div class="transport"><button id="redraw" type="button">New realisation</button><button id="reset" type="button">Reset</button></div>
+      </details>
+      <p class="local-note">Smoothing controls never change the cached observations. Change the seed or request a new realisation to collect a different sample. Entirely offline.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>A feature in a density estimate can reflect binning or smoothing rather than a new astrophysical population.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Demonstration views">
+        <button id="tab-explore" type="button" role="tab" aria-selected="true" aria-controls="panel-explore" tabindex="0">Explore</button>
+        <button id="tab-explain" type="button" role="tab" aria-selected="false" aria-controls="panel-explain" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric"><strong id="objects" data-result></strong>Observed objects</div>
+          <div class="metric"><strong id="peaks" data-result></strong>Visible KDE peaks above threshold</div>
+          <div class="metric"><strong id="hist-area" data-result></strong>Histogram area</div>
+          <div class="metric"><strong id="outside-mass" data-result></strong>KDE probability outside view (%)</div>
+        </div>
+        <article class="card">
+          <h2>Same objects, different apparent structure</h2>
+          <canvas id="density-plot" role="img" aria-label="Histogram and Gaussian kernel density estimate of fixed stellar-colour observations, with the known generating density and observation rug"></canvas>
+          <div class="legend"><span class="green">Teal dashed: true population</span><span>Purple: estimated KDE</span><span class="blue">Pale blue: histogram</span><span class="orange">Orange rug: fixed observations</span></div>
+          <p id="data-note" class="hint"></p>
+        </article>
+        <p class="notice">There are <strong>two known generating components</strong> in this simulation. The displayed peak count is a smoothing-dependent visual diagnostic, not a component-count estimate or a significance test.</p>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol>
+          <li>Change only the bin origin. Track the orange observation rug: every object stays in place, even when apparent peaks move.</li>
+          <li>Compare the undersmoothed and oversmoothed presets. A narrow bandwidth exposes sample noise; a broad bandwidth can merge real populations.</li>
+          <li>Return to a middle ground and increase n. New objects extend the same cached sample; the generating population is unchanged.</li>
+        </ol>
+        <h2>Truth versus an estimate</h2>
+        <p>The known population is a mixture: 60% Normal(&minus;0.8, 0.35<sup>2</sup>) and 40% Normal(0.9, 0.35<sup>2</sup>), representing two illustrative stellar-colour populations. The teal curve is this true density, <em>not</em> a fit. The sample can show more or fewer apparent bumps than there are components.</p>
+        <h2>Histogram area is probability</h2>
+        <p>A bin of width w containing c of n observations has height c/(nw). Its area is c/n. Edges are aligned at (integer + origin) &times; w and extended to include every observed value, so the complete histogram has area 1. Shifting origin by one whole width returns the same partition. The shared histogram uses left-closed bins, with the final right edge included; R's default hist uses right-closed bins. Exact edge observations can therefore change bins between implementations, but no mass is lost.</p>
+        <h2>A KDE is a normalized sum of kernels</h2>
+        <p>For bandwidth h, the estimate is p&#770;(x) = (1/n) &Sigma; &phi;((x&minus;x<sub>i</sub>)/h)/h. Each Gaussian kernel integrates to one on the real line. Small h produces roughness; large h can hide true structure. There is no universal bin count or bandwidth.</p>
+        <p>The browser evaluates the Gaussian sum directly on an 801-point display grid, instead of R density()'s binned FFT approximation. It computes the probability outside the finite view by summing Gaussian lower and upper tails, not grid integration or subtraction from a rounded value of one. The histogram is fully in view, but Gaussian kernel tails extend to infinity. Neither the KDE nor the true population is renormalised to the window. Exceptionally tiny tail probabilities can underflow to zero in floating-point arithmetic.</p>
+        <h2>What the peak count does not say</h2>
+        <p>The counter finds local maxima on the displayed grid and ignores heights at or below 2% of its maximum. It depends on bandwidth, sample noise, grid resolution and the finite viewport. It has no uncertainty estimate and is not a formal test for astrophysical subpopulations. Its value may differ slightly from R's 512-point approximate KDE.</p>
+        <p>The browser caches 1,000 observations for each seed. All three smoothing controls reuse those exact values; changing n selects a prefix. Reset restores the default seeded sample. The shared browser RNG is not R's RNG, so an identical seed number does not give identical individual observations.</p>
+      </section>
+      <footer><a href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section1b_html.html">Lecture: KDEs and Graphical Distribution Summarisation</a> &middot; <a href="../">All demonstrations</a></footer>
+    </main>
+  </div>
+</body>
+</html>

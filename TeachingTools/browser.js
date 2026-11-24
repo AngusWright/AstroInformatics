@@ -88,6 +88,31 @@
     const { ctx, xp, yp } = frame; ctx.fillStyle = colour;
     values.forEach(([x, y]) => { ctx.beginPath(); ctx.arc(xp(x), yp(y), radius, 0, 2 * Math.PI); ctx.fill(); });
   }
+  function bars(frame, centres, heights, widths, colour, baseline = 0) {
+    const { ctx, xp, yp } = frame;
+    ctx.fillStyle = colour;
+    centres.forEach((x, i) => {
+      const width = Array.isArray(widths) ? widths[i] : widths;
+      const left = xp(x - width / 2), right = xp(x + width / 2);
+      ctx.fillRect(left, Math.min(yp(baseline), yp(heights[i])), Math.max(0.5, right - left),
+        Math.abs(yp(heights[i]) - yp(baseline)));
+    });
+  }
+  function heatmap(frame, xs, ys, values, colour) {
+    Astro.check(xs.length > 1 && ys.length > 1 && values.length === ys.length &&
+      values.every(row => row.length === xs.length && row.every(Number.isFinite)), "Heatmap grid must be finite and rectangular.");
+    let lo = 0, hi = -Infinity;
+    values.forEach(row => row.forEach(value => { lo = Math.min(lo, value); hi = Math.max(hi, value); }));
+    const width = hi - lo || 1;
+    const colourFor = colour || (value => `hsl(205, 65%, ${98 - 65 * (value - lo) / width}%)`);
+    const dx = (xs[1] - xs[0]) / 2, dy = (ys[1] - ys[0]) / 2;
+    const { ctx, xp, yp } = frame;
+    values.forEach((row, j) => row.forEach((value, i) => {
+      ctx.fillStyle = colourFor(value);
+      ctx.fillRect(xp(xs[i] - dx), yp(ys[j] + dy),
+        xp(xs[i] + dx) - xp(xs[i] - dx) + 0.5, yp(ys[j] - dy) - yp(ys[j] + dy) + 0.5);
+    }));
+  }
   function blank(canvas, message) {
     const width = Math.max(240, canvas.clientWidth), height = Math.max(180, canvas.clientHeight);
     const ratio = window.devicePixelRatio || 1;
@@ -107,5 +132,5 @@
   function outputs() {
     document.querySelectorAll("output[for]").forEach(output => { output.value = $(output.getAttribute("for")).value; });
   }
-  root.AstroUI = { $, number, linspace, extent, plot, line, area, points, blank, table, outputs };
+  root.AstroUI = { $, number, linspace, extent, plot, line, area, points, bars, heatmap, blank, table, outputs };
 })(globalThis);

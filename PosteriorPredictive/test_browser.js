@@ -1,0 +1,34 @@
+"use strict";
+const assert = require("node:assert/strict");
+require("../TeachingTools/lesson_browser_test.js").runLessonBrowser("PosteriorPredictive", async b => {
+  assert.equal(await b.evaluate("document.title"), "Knowing the Mean Is Not Predicting the Next Star");
+  for (const colour of [[80, 89, 166], [8, 127, 140], [213, 101, 52]])
+    assert.ok(await b.hasColour("predictive", colour), "All three uncertainty distributions must be plotted");
+  assert.ok(await b.hasColour("observations", [213, 101, 52]));
+  const observed = await b.evaluate("lesson.result.x");
+  const initialSd = parseFloat(await b.text("mean-sd"));
+  await b.change("show_data", false);
+  assert.deepEqual(await b.evaluate("lesson.result.x"), observed);
+  assert.equal(await b.hasColour("observations", [213, 101, 52]), false);
+  await b.change("n", 300);
+  assert.deepEqual(await b.evaluate("lesson.result.x.slice(0, 20)"), observed);
+  assert.ok(parseFloat(await b.text("mean-sd")) < initialSd / 3);
+  assert.ok(parseFloat(await b.text("measurement-sd")) > 1.7);
+  await b.change("intrinsic", 0);
+  assert.equal(await b.text("mean-sd"), await b.text("star-sd"));
+  assert.ok(parseFloat(await b.text("measurement-sd")) > 0.8);
+  assert.deepEqual(await b.evaluate("lesson.result.posterior.intervals.mean"), await b.evaluate("lesson.result.posterior.intervals.star"));
+  await b.change("measurement", 0.1);
+  assert.ok(parseFloat(await b.text("mean-sd")) < 0.006);
+  assert.ok(parseFloat(await b.text("measurement-sd")) > 0.1);
+  await b.change("n", 1);
+  assert.equal(await b.evaluate("lesson.result.x.length"), 1);
+  await b.change("show_data", true);
+  assert.ok(await b.hasColour("observations", [213, 101, 52]));
+  await b.click("redraw");
+  const newObservation = await b.evaluate("lesson.result.x");
+  await b.change("show_data", false);
+  assert.deepEqual(await b.evaluate("lesson.result.x"), newObservation);
+  await b.healthy();
+  await b.click("reset");
+}).catch(error => { console.error(error); process.exitCode = 1; });

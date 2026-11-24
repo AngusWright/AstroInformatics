@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compare exact normalised evidences for a known spectral line with a proper Gaussian amplitude prior, not just best fits.">
+  <title>Is That Spectral Line Real?</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>Is that spectral line real?</h1>
+      <p>A flexible model can fit well while making a poor prediction before seeing the data.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4b_html.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Spectrum and prior</summary>
+        <form id="controls" novalidate>
+          <label for="amplitude">True line amplitude <output for="amplitude"></output></label>
+          <input id="amplitude" type="range" min="-2" max="3" step="0.1" value="0.5">
+          <p class="hint">Positive: emission. Negative: absorption. Both are allowed under the alternative.</p>
+          <label for="noise">Known flux uncertainty, σ <output for="noise"></output></label>
+          <input id="noise" type="range" min="0.3" max="2" step="0.1" value="1">
+          <label for="prior">Alternative amplitude prior SD, w <output for="prior"></output></label>
+          <input id="prior" type="range" min="0.1" max="10" step="0.1" value="2">
+          <p class="hint">H₁: A ∼ Normal(0, w²), a proper, unit-area prior with finite specified SD. H₀: A = 0.</p>
+          <label for="seed">Random seed</label>
+          <input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <fieldset><legend>Guided examples</legend>
+          <div class="transport"><button type="button" data-preset="noise-only">Noise alone</button><button type="button" data-preset="clear-line">Clear line</button><button type="button" data-preset="broad">Very broad alternative</button></div>
+        </fieldset>
+        <div class="transport"><button id="redraw" type="button">New realisation</button><button id="reset" type="button">Reset</button></div>
+        <p class="hint">Changing the prior never changes the spectrum or its best fit. Amplitude and noise controls transform the same seeded Gaussian errors.</p>
+      </details>
+      <p class="local-note">70 simulated flux measurements. Known continuum, line centre and width. Exact integration over amplitude; no line-position search.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>Bayesian evidence averages likelihood over a proper prior; it is not the maximum likelihood.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Demonstration views">
+        <button id="tab-explore" role="tab" aria-controls="panel-explore" aria-selected="true" tabindex="0">Explore</button>
+        <button id="tab-explain" role="tab" aria-controls="panel-explain" aria-selected="false" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric">Measured amplitude Â ± SE<strong id="estimate" data-result>—</strong></div>
+          <div class="metric">log₁₀ Bayes factor, H₁ / H₀<strong id="log-bf" data-result>—</strong></div>
+          <div class="metric">P(H₁ | data), equal prior odds<strong id="probability" data-result>—</strong></div>
+          <div class="metric">log₁₀ maximum likelihood ratio<strong id="log-ml" data-result>—</strong></div>
+        </div>
+        <article class="card">
+          <h2>The same spectrum, two hypotheses</h2>
+          <canvas id="spectrum-plot" role="img" aria-label="Simulated spectrum, a flat no-line model, and the best-fitting known-centre spectral line."></canvas>
+          <div class="legend"><span style="color:#d56534">● Observed flux</span><span style="color:#087f8c">– – H₀: continuum only</span><span style="color:#5059a6">— H₁: maximum-likelihood fit</span></div>
+          <p class="hint">The purple line is the best fit, not the evidence or a posterior predictive mean. Its amplitude is unconstrained in sign.</p>
+        </article>
+        <article class="card" style="margin-top:16px">
+          <h2>Evidence scores predictions before seeing the data</h2>
+          <canvas id="predictive-plot" role="img" aria-label="Normalised predictive densities of the measured amplitude under the no-line and line hypotheses. A vertical line marks the measured amplitude."></canvas>
+          <div class="legend"><span style="color:#087f8c">— H₀: Normal(0, s²)</span><span style="color:#5059a6">— H₁: Normal(0, s² + w²)</span><span style="color:#d56534">– – Measured Â</span></div>
+          <p class="hint">Each predictive density has total area one over the real line; curves are not rescaled to their peaks or the visible window. They predict an estimator, not the unknown parameter.</p>
+        </article>
+        <p id="comparison-note" class="notice" data-result></p>
+        <details class="advanced"><summary>Normalised evidence and amplitude posterior</summary>
+          <div class="table-wrap"><table aria-label="Evidence calculation"><thead><tr><th>Quantity</th><th>Value</th></tr></thead><tbody id="evidence-table"></tbody></table></div>
+          <p class="hint">Full-spectrum evidence densities use the stated flux units. Their ratio is dimensionless. Orthogonal residual factors cancel in the Bayes factor, so the predictive-density ratio at Â gives exactly the same answer.</p>
+        </details>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol>
+          <li>Hold the spectrum fixed and widen the alternative prior. Does the best fit change? Does its evidence?</li>
+          <li>Compare <strong>Noise alone</strong> and <strong>Clear line</strong>. A simulated noise-only spectrum can still favour the line model by chance; the presets are not guaranteed decisions.</li>
+          <li>Read both predictive densities at the measured amplitude. Their ratio, not the ratio of their peaks, is BF₁₀.</li>
+          <li>Try a negative amplitude. The alternative includes absorption as well as emission; there is no one-sided prior hidden in the calculation.</li>
+        </ol>
+        <h2>A small, fully specified model</h2>
+        <p>Seventy independent flux measurements lie from 500 to 510 nm. Their known Gaussian noise SD is σ. The continuum is fixed at 1; the Gaussian line template g has known centre 505 nm and width 0.35 nm. Only its amplitude A is unknown.</p>
+        <pre>fluxᵢ ∼ Normal(1 + A gᵢ, σ²)
+H₀: A = 0                   H₁: A ∼ Normal(0, w²)
+Â = Σ gᵢ(fluxᵢ − 1) / Σ gᵢ²
+s = σ / √Σ gᵢ²
+
+p(Â | H₀) = Normal(Â | 0, s²)
+p(Â | H₁) = Normal(Â | 0, s² + w²)
+BF₁₀ = p(Â | H₁) / p(Â | H₀)
+log BF₁₀ = −½ log(1 + w²/s²) + ½(Â/s)² w²/(s² + w²)</pre>
+        <p>The finite positive prior SD is explicit (0.1–10); this Gaussian prior has unbounded support but integrates to one. It is not an improper flat prior or an arbitrarily truncated Gaussian. Marginal likelihoods with an unspecified flat amplitude prior would have an undefined normalisation.</p>
+        <h2>The Occam trade-off</h2>
+        <p>The first log-Bayes-factor term penalises diffuse prior predictions. The second rewards a signal that the null predicted poorly. Broadening a prior does not always decrease its evidence, but an unnecessarily diffuse prior wastes predictive mass away from the observations. Evidence is not merely the best-fit likelihood with an invented parameter-count penalty.</p>
+        <p>Full-spectrum evidence is ∫ L(A) p(A) dA. Residual terms orthogonal to the line template are identical under both hypotheses and cancel exactly. For comparison, the maximum likelihood ratio has log value ½(Â/s)² and cannot penalise a broad alternative prior.</p>
+        <p>The displayed model probability is BF₁₀/(1 + BF₁₀), assuming equal prior model odds. Other model odds give other probabilities. A value rounded to 0% or 100% is not mathematical certainty; the log Bayes factor remains available.</p>
+        <p>There is no search over unknown line centres, continuum, noise or widths. Those would add parameters and change the evidence. Choose priors from pre-data knowledge rather than tuning them after inspecting this spectrum.</p>
+        <p><a href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4b_html.html">Lecture: Bayesian Model Comparison and Additional Parameters</a></p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run this local demonstration.</p></noscript>
+      <footer>Browser-native Canvas and exact normalised Gaussian evidence. No Shiny, WebR or runtime downloads.</footer>
+    </main>
+  </div>
+</body>
+</html>

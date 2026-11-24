@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Freeze a colour classifier, move it between surveys, and compare honest calibration corrections without target-label leakage.">
+  <title>A Classifier under Alien Skies</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+  <style>.classification-canvas { height: 430px; } @media (max-width: 800px) { .classification-canvas { height: 340px; } }</style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>A classifier under alien skies</h1>
+      <p>A decision rule that works in one survey may fail under another measurement process.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4c_html.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Deployment conditions</summary>
+        <form id="controls" novalidate>
+          <label for="offset">New-survey calibration offset <output for="offset"></output></label>
+          <input id="offset" type="range" min="-2" max="2" step="0.1" value="0.8">
+          <label for="noise">Additional new-survey colour noise <output for="noise"></output></label>
+          <input id="noise" type="range" min="0" max="1.2" step="0.05" value="0.3">
+          <label for="view">Display validation sample</label>
+          <select id="view"><option value="target">New survey</option><option value="original">Original survey</option></select>
+          <label for="adaptation">New-survey correction</label>
+          <select id="adaptation">
+            <option value="none">None — frozen classifier</option>
+            <option value="known">Known external calibration</option>
+            <option value="unlabelled">Unlabelled mean alignment</option>
+          </select>
+          <p class="hint">Training stays fixed when these controls change. Neither correction uses target class labels. Noise cannot be undone by subtracting an offset.</p>
+          <label for="seed">Random seed</label>
+          <input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <div class="transport"><button id="redraw" type="button">New realisation</button><button id="reset" type="button">Reset</button></div>
+        <h2 class="eyebrow">Guided examples</h2>
+        <div class="transport">
+          <button type="button" data-preset="matched">Matched surveys</button>
+          <button type="button" data-preset="mismatch">Calibration mismatch</button>
+          <button type="button" data-preset="corrected">Correct the calibration</button>
+          <button type="button" data-preset="noisy">Noise is not an offset</button>
+        </div>
+      </details>
+      <p class="local-note">A balanced, simulated star/quasar example, not a realistic quasar selection function. Entirely local; no installation or data upload.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>Validation only describes the deployment conditions it represents. Correcting a calibration shift is not the same as removing noise.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Lesson views">
+        <button id="tab-explore" role="tab" aria-selected="true" aria-controls="panel-explore" tabindex="0">Explore</button>
+        <button id="tab-explain" role="tab" aria-selected="false" aria-controls="panel-explain" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric">Original-survey validation<strong id="original-accuracy" data-result></strong></div>
+          <div class="metric">New survey, frozen rule<strong id="frozen-accuracy" data-result></strong></div>
+          <div class="metric">New survey, selected correction<strong id="adapted-accuracy" data-result></strong></div>
+          <div class="metric">Training / validation per survey<strong id="sample-count" data-result></strong></div>
+        </div>
+        <article class="card">
+          <h2 id="plot-heading">A frozen classifier in a different survey</h2>
+          <canvas id="classification-plot" class="classification-canvas" role="img" aria-label="Two-colour validation sample with true star and quasar classes, classifier decision regions, and orange rings marking errors."></canvas>
+          <div class="legend"><span class="green">Teal circles: stars</span><span class="blue">Purple squares: quasars</span><span class="orange">Orange rings: errors</span><span>Dark solid: displayed rule</span><span>Dashed grey: uncorrected rule</span></div>
+          <p class="hint">Coordinates are raw measured colours. Background shading is a class decision, <strong>not</strong> a probability of correctness. Truth is used only for evaluation and point styling, never for target adaptation.</p>
+        </article>
+        <p id="correction-note" class="notice"></p>
+        <div class="table-wrap">
+          <table aria-label="Independent validation errors by class">
+            <thead><tr><th>Evaluation</th><th>Stars misclassified / 200</th><th>Quasars misclassified / 200</th></tr></thead>
+            <tbody id="validation-table"></tbody>
+          </table>
+        </div>
+        <p class="hint">All three comparisons use validation objects independent of training, never training accuracy. The two target rows use exactly the same target objects and noise realisation.</p>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol>
+          <li>Choose <strong>Matched surveys</strong>. Both independent validation sets follow the training measurement model; their accuracies can still differ by chance.</li>
+          <li>Choose <strong>Calibration mismatch</strong>. Only target measurements move; the training sample and decision rule stay frozen.</li>
+          <li>Switch to the original survey. Its validation results are unchanged. Switch back to inspect target errors.</li>
+          <li>Choose <strong>Correct the calibration</strong>. The known shift is subtracted before applying the same rule. Compare with <strong>Unlabelled mean alignment</strong>, which estimates the shift from features alone.</li>
+          <li>Choose <strong>Noise is not an offset</strong>. Even correct calibration cannot recover information erased by added measurement noise.</li>
+        </ol>
+        <h2>What is trained, shifted and evaluated?</h2>
+        <p>The source training sample contains 200 stars and 200 quasars. Their intrinsic colour means are (−0.8, −0.4) and (0.8, 0.4), with independent Normal colour SDs 0.35 and 0.45. A linear discriminant uses the fitted class means and the average of their within-class sample covariance matrices, with equal class priors. The rule is wᵀx &gt; wᵀ(μ̂₀ + μ̂₁)/2; exact ties are assigned to stars.</p>
+        <p>Two separate, balanced validation sets each contain 400 independent objects. New-survey measurements add the offset (δ, 0.4δ) and independent Normal noise of SD η in each colour. The labels do not change. Source data, source validation, target intrinsic colours and standardised target noise are cached by seed; changing calibration, noise, display or correction never redraws them.</p>
+        <p>This is general <strong>survey/domain shift</strong>. Changing the measurement process can change P(class | measured colour), so this is not restricted to the narrower mathematical definition of pure covariate shift.</p>
+        <h2>Honest but deliberately limited adaptation</h2>
+        <p><strong>Known external calibration</strong> subtracts the specified simulated offset, as if supplied by an independent instrument calibration. It is an idealised benchmark with perfect calibration information, not something learned from target class labels. The source classifier is not retrained and target noise is not removed.</p>
+        <p><strong>Unlabelled mean alignment</strong> subtracts mean(target features) − mean(source training features). It uses the unlabelled target batch, not its labels; evaluation is transductive on that same batch. This relies on a shared class mixture and an additive shift. Finite-sample fluctuations, different class proportions or a more complex measurement change can make it inaccurate or harmful. It is not guaranteed to improve accuracy.</p>
+        <p>The labelled target truth reveals evaluation errors only. Repeatedly choosing a correction after inspecting those accuracies would itself tune on validation labels; an actual deployment needs a separate final test set. Balanced classes and these simple Gaussian populations are not a realistic quasar survey.</p>
+        <p><a href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4c_html.html">Lecture: Machine Learning, Extrapolation, and Covariate Shift</a></p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run this local demonstration.</p></noscript>
+      <footer>Browser-native HTML and JavaScript. No Shiny, WebR, external services or runtime downloads.</footer>
+    </main>
+  </div>
+</body>
+</html>

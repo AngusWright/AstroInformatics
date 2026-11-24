@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A flux-limited toy survey: reveal the galaxies a telescope misses and see selection imitate luminosity evolution.">
+  <title>The Universe You Don't Detect</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>The universe you don't detect</h1>
+      <p>A telescope's depth can create a luminosity–distance relation in a population with no intrinsic evolution.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/AstroStatistics_1.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Survey settings</summary>
+        <form id="controls" novalidate>
+          <label for="limit">Limiting apparent magnitude <output for="limit"></output></label>
+          <input id="limit" type="range" min="17" max="24" step="0.1" value="20">
+          <p class="hint">Larger magnitude = deeper survey. Detection requires m ≤ limit.</p>
+          <label for="overlay">Reveal the missing population</label>
+          <select id="overlay"><option value="show">Show nondetections</option><option value="hide">Hide nondetections</option></select>
+          <label for="seed">Random seed</label>
+          <input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <fieldset><legend>Guided examples</legend>
+          <div class="transport"><button type="button" data-preset="shallow">Shallow survey</button><button type="button" data-preset="deep">Deep survey</button></div>
+        </fieldset>
+        <div class="transport"><button id="redraw" type="button">New realisation</button><button id="reset" type="button">Reset</button></div>
+        <p class="hint">All 2,400 galaxies remain in the simulation. Display changes reuse the same distances and luminosities; playback never resamples them.</p>
+      </details>
+      <p class="local-note">A controlled Euclidean toy universe, not a fit to a real survey. Runs locally; no data leave your browser.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>An observed catalogue is not the parent population. Selection can imitate a physical trend.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Demonstration views">
+        <button id="tab-explore" role="tab" aria-controls="panel-explore" aria-selected="true" tabindex="0">Explore</button>
+        <button id="tab-explain" role="tab" aria-controls="panel-explain" aria-selected="false" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric">Detected galaxies<strong id="detected" data-result>—</strong></div>
+          <div class="metric">Missing, not absent<strong id="missing" data-result>—</strong></div>
+          <div class="metric">Realised completeness<strong id="completeness" data-result>—</strong></div>
+          <div class="metric">Detected mean log-luminosity<strong id="detected-mean" data-result>—</strong></div>
+        </div>
+        <article class="card">
+          <h2 id="plot-heading" data-result>What survives the detection limit?</h2>
+          <canvas id="selection-plot" role="img" aria-label="Luminosity against distance. Detected galaxies and their binned means are orange, nondetections grey, the true mean dashed teal, and the magnitude boundary dark."></canvas>
+          <div class="legend"><span style="color:#d56534">● Detected / binned mean</span><span style="color:#7f8a9b">● Nondetected (if shown)</span><span style="color:#087f8c">– – Population mean = 0</span><span>— Detection boundary</span></div>
+          <p class="hint">Above the dark boundary is detectable. The underlying population has the same luminosity distribution at every distance. Empty distance bins have no estimated mean and are not joined across.</p>
+        </article>
+        <div class="transport" aria-label="Cached survey animation">
+          <button id="play" class="primary" type="button" aria-pressed="false">Play animation</button>
+          <button id="step" type="button">Step</button><button id="rewind" type="button">Rewind</button><button id="finish" type="button">Show result</button>
+          <label for="delay">Pace</label><select id="delay"><option value="100">Fast</option><option value="200" selected>Normal</option><option value="500">Slow</option></select>
+        </div>
+        <label for="frame">Survey restriction: <span id="frame-label">60 / 60</span></label>
+        <input id="frame" type="range" min="0" max="60" step="1" value="60" style="width:100%">
+        <p id="phase-note" class="notice" data-result></p>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol>
+          <li>Choose <strong>Shallow survey</strong>. At large distances, which galaxies survive?</li>
+          <li>Hide, then reveal the missing population. Was there ever an intrinsic luminosity–distance relation?</li>
+          <li>Rewind and play: the limit tightens from magnitude 26 to your chosen limit while every galaxy stays fixed.</li>
+        </ol>
+        <h2>What is simulated?</h2>
+        <p>There are 2,400 galaxies between 30 and 800 Mpc, drawn with uniform spatial density: distance cubed is uniform. Their independent log<sub>10</sub>(L/L₀) values follow Normal(0, 0.6²). Luminosity is in arbitrary reference units. The dashed line is the theoretical population expectation, zero, not the finite sample's exact mean.</p>
+        <pre>M = −18 − 2.5 log₁₀(L/L₀)
+m = M + 5 log₁₀(distance / Mpc) + 25
+detected ⇔ m ≤ limiting magnitude</pre>
+        <p>The orange curve is the sample mean log-luminosity in ten 80-Mpc bins. Missing objects are still in the parent population even when their points are hidden. Survey completeness is the fraction detected in this particular realisation, not a universal correction factor.</p>
+        <h2>Why selection belongs in the model</h2>
+        <pre>p(x | detected) = S(x) p(x) / ∫ S(u) p(u) du</pre>
+        <p>The denominator depends on the population model. Ignoring it and fitting only detected galaxies can misidentify selection as evolution. This illustration does not estimate a corrected luminosity function or claim that all observed trends are selection effects.</p>
+        <p>This is a sharp apparent-magnitude cut with perfect flux measurements. Cosmological geometry, evolution, extinction, K-corrections and uncertain detection probabilities are deliberately excluded.</p>
+        <p><a href="https://anguswright.github.io/LectureNotes/AstroStatistics_1.html">Lecture: Detection Effects, Malmquist Bias and Survivor Bias</a></p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run this local demonstration.</p></noscript>
+      <footer>Browser-native Canvas and exact magnitude selection. No Shiny, WebR or runtime downloads.</footer>
+    </main>
+  </div>
+</body>
+</html>

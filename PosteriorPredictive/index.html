@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Distinguish posterior uncertainty in a stellar population mean from latent-star and future-measurement predictive uncertainty.">
+  <title>Knowing the Mean Is Not Predicting the Next Star</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script><script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script><script src="model.js" defer></script><script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>Knowing the mean is not predicting a star</h1><p>More data pin down a population mean, not the next member's individual velocity.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3c_html.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Member-star measurements</summary>
+        <form id="controls" novalidate>
+          <label for="n">Number of measured stars <output for="n"></output></label>
+          <input id="n" type="range" min="1" max="300" step="1" value="20">
+          <label for="intrinsic">Intrinsic velocity SD (km/s) <output for="intrinsic"></output></label>
+          <input id="intrinsic" type="range" min="0" max="4" step="0.1" value="1.5">
+          <label for="measurement">Measurement SD (km/s) <output for="measurement"></output></label>
+          <input id="measurement" type="range" min="0.1" max="3" step="0.1" value="0.8">
+          <label class="checkbox"><input id="show_data" type="checkbox" checked> Show measured velocities</label>
+          <label for="seed">Random seed</label><input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <div class="transport"><button id="redraw" type="button">New realisation</button><button id="reset" type="button">Reset</button></div>
+      </details>
+      <h2>Guided examples</h2>
+      <div class="transport"><button type="button" data-preset="few">Few stars</button><button type="button" data-preset="many">Many stars</button><button type="button" data-preset="no-scatter">No intrinsic scatter</button></div>
+      <p class="local-note">Known dispersions; proper Normal(0, 5²) prior on the mean. Increasing n reveals a nested set of the same simulated stars.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>Posterior uncertainty in a mean can vanish. Irreducible scatter in a future observation cannot.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Lesson views">
+        <button id="tab-explore" role="tab" aria-selected="true" aria-controls="panel-explore" tabindex="0">Explore</button>
+        <button id="tab-explain" role="tab" aria-selected="false" aria-controls="panel-explain" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric">Posterior mean (km/s)<strong id="posterior-mean" data-result></strong></div>
+          <div class="metric">SD of population mean<strong id="mean-sd" data-result></strong></div>
+          <div class="metric">SD of next true star<strong id="star-sd" data-result></strong></div>
+          <div class="metric">SD of next measurement<strong id="measurement-sd" data-result></strong></div>
+        </div>
+        <article class="card"><h2>Three questions, three uncertainty distributions</h2>
+          <canvas id="predictive" role="img" aria-label="Peak-scaled Normal density rows for the population mean, next true stellar velocity and next measured velocity; thick bars are central 95 percent intervals."></canvas>
+          <div class="legend"><span class="blue">Purple: population mean</span><span class="green">Teal: next true star</span><span class="orange">Orange: next measurement</span><span>Dotted vertical line: simulated true mean 2 km/s</span></div>
+          <p class="hint">Each row is independently peak-scaled to compare widths; heights and shaded areas cannot be compared as probabilities between rows. Thick bars enclose 95% probability in their own distribution.</p>
+        </article>
+        <div class="table-wrap"><table aria-label="Posterior and predictive variances and intervals">
+          <thead><tr><th>Question</th><th>Variance (km/s)²</th><th>Central 95% interval (km/s)</th></tr></thead><tbody id="intervals"></tbody>
+        </table></div>
+        <div class="plot-grid">
+          <article class="card"><h2>The selected observations</h2>
+            <canvas id="observations" class="small-canvas" role="img" aria-label="Measured velocities by star index, with the simulated population mean and inferred posterior mean."></canvas>
+            <p id="sample-summary" class="hint"></p>
+          </article>
+          <article class="card"><h2>What more stars can reduce</h2>
+            <canvas id="learning" class="small-canvas" role="img" aria-label="Standard deviations versus sample size for the population mean, next true star and next measurement."></canvas>
+            <p class="hint">Same colours as above. The vertical line marks n; the asymptotic floors are 0, intrinsic SD, and √(intrinsic² + measurement²).</p>
+          </article>
+        </div>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol><li>Compare <strong>Few stars</strong> with <strong>Many stars</strong>. Which interval keeps shrinking?</li>
+          <li>Set <strong>No intrinsic scatter</strong>. The next true star then shares the population mean; a future <em>measurement</em> still adds measurement noise.</li>
+          <li>Increase the intrinsic dispersion while holding measurement precision fixed. Even perfectly knowing the mean would not tell you an individual star's velocity.</li></ol>
+        <h2>A mean, a new member, a new measurement</h2>
+        <p>Member velocities follow Normal(&mu;, &tau;²); measurements add independent Normal(0, &sigma;²) noise. Both dispersions are known, the true simulated mean is 2 km/s, and the proper prior is &mu; ~ Normal(0, 5²).</p>
+        <p>Let S = &tau;² + &sigma;². The posterior mean variance is V = 1/[1/25 + n/S], and its mean is m = V &Sigma;x<sub>i</sub>/S. The three distributions all centre on m:</p>
+        <ul><li>Population mean: Normal(m, V).</li><li>Next latent stellar velocity: Normal(m, V + &tau;²).</li>
+          <li>Next measured velocity: Normal(m, V + &tau;² + &sigma;²).</li></ul>
+        <p>These Normal formulas specify variances, not SDs. The law of total variance separates posterior uncertainty about the mean from the irreducible dispersion of a new observation. As n grows, V approaches zero; the predictive variances retain their scatter terms.</p>
+        <h2>Read the intervals correctly</h2>
+        <p>The central 95% intervals are m &plusmn; &Phi;<sup>&minus;1</sup>(0.975) times the relevant SD. Only the first is a credible interval for the mean. The other two are predictive intervals for different future quantities, not frequentist confidence intervals or measurement error bars on the mean.</p>
+        <p>The R model and nested 300-star design are retained. The browser uses its own seeded generator; changing n or hiding the observations does not redraw any star. Changing a dispersion transforms the same underlying Normal deviates and deliberately changes the data-generating model. “New realisation” changes the random stream.</p>
+        <p>For the interval endpoints, the browser uses the Normal 97.5% quantile (1.9599639845…) rather than R's plotted approximation 1.96. An additional learning curve shows analytic SDs, not extra simulated datasets. Selection, membership ambiguity and uncertainty in the dispersions are excluded, as in the R lesson.</p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run this local demonstration.</p></noscript>
+      <footer>Browser-native HTML and Canvas. No Shiny, WebR, runtime downloads or data upload.</footer>
+    </main>
+  </div>
+</body>
+</html>

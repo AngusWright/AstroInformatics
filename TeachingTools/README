@@ -1,27 +1,57 @@
-Shared teaching-page interface
+Shared teaching-page infrastructure
 
-Each lesson has its own app.R, numerical model.R, controls, interpretation,
-and lecture reference. This file supplies only the consistent visual shell,
-reproducible random-number scope, preset handling, and paused-by-default
-animation controls. No remote fonts, JavaScript libraries, or R packages
-beyond shiny and bslib are required.
+Browser-native tools
+--------------------
+statistics.js supplies dependency-free probability functions and seeded draws.
+browser.js and browser.css supply the shared Canvas and responsive interface.
+Gibbs retains its own drawing helpers and styles.
+lesson.js supplies the sixteen lesson ports with shared controls, accessible tabs,
+input errors, reproducible realizations, mobile settings and cached playback.
+Animation reveals an existing simulation; it never redraws random observations.
+statistics.js also supplies R-type-7 sample quantiles and histograms that retain
+the probability mass of observations outside the displayed bin range.
 
-Run any page with shiny::runApp("SelectionEffects"), replacing the directory
-as needed. Local apps source ../TeachingTools/teaching.R. During Pages export
-deploy.R bundles this shared source into each app so it runs independently
-in the browser, without references outside its exported directory.
+html-tools.json is the authoritative catalogue for the published HTML tools,
+their gallery order, lecture references, and explicit runtime assets.
+All twenty tools are native HTML. deploy.js builds a clean _site/ with no R,
+Shiny, WebR or editor payloads.
+GitHub Actions publishes only that artifact, not the historical docs/ exports.
 
-The root apps.R catalogue defines gallery ordering, lecture references, and
-which apps need this shared source bundled. deploy.R exports all 20 pages
-and generates docs/index.html from that catalogue. AstroInformatics.qmd
-provides a matching source-page overview.
+Build and verify from the repository root (Node 22+):
+  node deploy.js
+  node TeachingTools/test_tools.js
 
-Tests:
+browser_test.js runs Chrome through CDP using only Node built-ins. Set
+HTML_SITE_ROOT=_site to test the published artifact instead of source pages:
+  HTML_SITE_ROOT=_site node TeachingTools/test_tools.js --browser
+
+test_tools.js discovers each catalogue entry's test_*.js numerical regressions
+(excluding test_browser.js) and its test_browser.js interaction suite. The
+lesson_browser_test.js helper adds shared regression checks for the lesson shell;
+each tool adds its own statistical/control checks. Individual suites can still
+be run directly with Node.
+
+R/Shiny reference lessons
+------------------------
+All original R implementations are retained as references, but are not published
+by the HTML workflow. apps.R reads the same html-tools.json catalogue. Its shared
+flag refers only to the sixteen R references that use teaching.R, not the native
+HTML runtime. JavaScript and R use different random generators, so equal seeds
+do not imply identical simulated datasets.
+
+teaching.R supplies their visual shell, reproducible random-number scope,
+preset handling, and paused-by-default animation controls. Local apps source
+../TeachingTools/teaching.R. Run them with shiny::runApp("SelectionEffects"),
+replacing the directory as needed; shiny and bslib are required.
+
+Reference tests:
   Rscript TeachingTools/test_numerics.R
   Rscript TeachingTools/test_pages.R
-  Rscript TeachingTools/test_export.R (after Rscript deploy.R)
 
 The numerical suite checks probability normalisation, exact updates, limiting
 cases, simulation invariants, sampling distributions, and preservation of data
 when inference or display settings change. The reactive suite exercises every
-page, primary control boundaries, guided examples, plots, and animation.
+R teaching page, primary control boundaries, guided examples, plots, and animation.
+
+deploy.R and test_export.R now delegate to the Node HTML build and export
+tests; they no longer export or validate Shinylive payloads.

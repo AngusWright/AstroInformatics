@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Accumulate an exact Poisson photon stream and compare discrete counting fluctuations with a continuity-corrected Gaussian approximation.">
+  <title>Counting Photons</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+  <style>.stream-canvas { height: 190px; }</style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>Counting photons</h1>
+      <p>Individual arrivals are unpredictable. Their count distribution follows a simple law.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2c_html.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Source and exposure</summary>
+        <form id="controls" novalidate>
+          <label for="rate">Photon rate per second <output for="rate"></output></label>
+          <input id="rate" type="range" min="0" max="8" step="0.2" value="2">
+          <label for="exposure">Exposure time in seconds <output for="exposure"></output></label>
+          <input id="exposure" type="range" min="0.5" max="20" step="0.5" value="5">
+          <label for="gaussian">Gaussian approximation</label>
+          <select id="gaussian"><option value="show">Show</option><option value="hide">Hide</option></select>
+          <p class="hint">Rate is known and constant. Zero rate is an exactly dark source, not a faint-source approximation.</p>
+          <label for="seed">Random seed</label>
+          <input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <div class="transport"><button id="redraw" type="button">New realisation</button><button id="reset" type="button">Reset</button></div>
+        <h2 class="eyebrow">Guided examples</h2>
+        <div class="transport">
+          <button type="button" data-preset="few">Few photons</button>
+          <button type="button" data-preset="many">Many photons</button>
+          <button type="button" data-preset="dark">A dark source</button>
+        </div>
+      </details>
+      <p class="local-note">Exact exponential waiting times and inverse-CDF Poisson counts. Never rounded Normal draws. Entirely local; no installation or data upload.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>Poisson fluctuations are discrete and asymmetric at low counts. A Gaussian is an approximation, not the counting law.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Lesson views">
+        <button id="tab-explore" role="tab" aria-selected="true" aria-controls="panel-explore" tabindex="0">Explore</button>
+        <button id="tab-explain" role="tab" aria-selected="false" aria-controls="panel-explain" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="transport" aria-label="Animation controls">
+          <button id="play" type="button" class="primary" aria-pressed="false">Play animation</button>
+          <button id="step" type="button">Step</button><button id="rewind" type="button">Rewind</button>
+          <button id="finish" type="button">Show result</button>
+          <label for="delay">Pace</label><select id="delay"><option value="100">Fast</option><option value="200" selected>Normal</option><option value="500">Slow</option></select>
+        </div>
+        <label for="frame">Exposure progress <span id="frame-label">60 / 60</span></label>
+        <input id="frame" type="range" min="0" max="60" step="1" value="60" style="width:100%">
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric">Expected count = variance<strong id="expected-count" data-result></strong></div>
+          <div class="metric">Photons in this stream<strong id="stream-count" data-result></strong></div>
+          <div class="metric">Count SD / relative SD<strong id="count-sd" data-result></strong></div>
+          <div class="metric">Repeated mean / variance<strong id="empirical-moments" data-result></strong></div>
+          <div class="metric">Gaussian mass below −0.5<strong id="negative-mass" data-result></strong></div>
+        </div>
+        <article class="card">
+          <h2 id="stream-heading">One possible photon stream</h2>
+          <canvas id="stream-plot" class="stream-canvas" role="img" aria-label="Photon arrival ticks revealed up to the current exposure time; a dashed line marks elapsed time."></canvas>
+          <p class="hint">Orange ticks are individual arrivals. The dashed purple line is elapsed exposure, not a fitted parameter.</p>
+        </article>
+        <article class="card" style="margin-top:16px">
+          <h2>Repeat the exposure 3,000 times</h2>
+          <canvas id="count-plot" role="img" aria-label="Empirical integer count frequencies, exact Poisson probabilities, and optional continuity-corrected Gaussian probability masses, including impossible negative counts."></canvas>
+          <div class="legend"><span class="orange">Orange bars: simulated counts</span><span class="green">Teal dots: exact Poisson</span><span class="blue">Purple line: binned Gaussian</span><span>Faint orange below zero: impossible Gaussian counts</span></div>
+          <p id="count-note" class="hint"></p>
+        </article>
+        <p class="notice">Playback reveals one cached arrival stream and fixed-quantile coupled count histograms. Moving the slider or showing the Gaussian never resamples photons. The 3,000 histogram replicates are not 3,000 simulated event timelines.</p>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol>
+          <li>Choose <strong>Few photons</strong>. Compare the asymmetric Poisson law with the Gaussian, which assigns mass to impossible negative integer counts.</li>
+          <li>Rewind and play to accumulate photons over time. Pause or scrub: returning to a frame gives the same stream and histogram.</li>
+          <li>Choose <strong>Many photons</strong>. Compare the absolute SD, √λ, with the relative SD, 1/√λ. Longer exposures increase absolute fluctuations but improve relative precision.</li>
+          <li>Choose <strong>A dark source</strong>, or rewind to zero exposure. All counts are exactly zero. Relative precision and the Gaussian approximation are undefined.</li>
+        </ol>
+        <h2>One counting law, two views</h2>
+        <p>The top panel is one homogeneous Poisson process with independent exponential waiting times, −log(U)/r, for uniform U in (0, 1). The source has known rate r. There is no background, detector dead time, saturation, clustering or time-varying rate.</p>
+        <p>At exposure t, N ∼ Poisson(λ = rt). Its expectation and variance both equal λ; its SD is √λ. For positive λ, relative count SD is 1/√λ. These are repeated-sampling properties of a known-rate model, <strong>not</strong> a confidence or credible interval inferred from one realised photon count.</p>
+        <p>The histogram shows 3,000 independent Poisson draws at each exposure. Counts are obtained by exact inverse-CDF sampling, using the Poisson recurrence, not a Normal approximation. One uniform quantile per replicate is held fixed across all 61 cached frames; this couples each replicate monotonically in exposure. Its cross-frame increments are not independent Poisson increments, so only the top panel is an actual event timeline.</p>
+        <h2>What the Gaussian gets wrong</h2>
+        <p>The comparison Normal has mean λ and variance λ. Its probability in an integer bin k is Φ((k + 0.5 − λ)/√λ) − Φ((k − 0.5 − λ)/√λ), a continuity correction. Thus dots, bars and line all show probability per integer count, not a mix of density and mass. No negative tail is renormalised away.</p>
+        <p>The mass below −0.5 becomes impossible negative counts after rounding. At low λ this and the symmetry mismatch matter. At zero exposure or rate, the Poisson is a point mass at zero, SD is zero, relative SD is undefined, and no nondegenerate Gaussian is drawn. The plotted window omits only small outer tails; probabilities always retain their original normalisation.</p>
+        <p>The implementation supports 0 ≤ λ ≤ 160, the entire control range, with floating-point Poisson recurrence and open-interval seeded uniforms. Changing exposure extends the same underlying stream; changing rate rescales its unit-rate waiting times. New realisation changes both random experiments; Reset restores them.</p>
+        <p><a href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2c_html.html">Lecture: The Poisson Distribution and Gaussian Distribution</a></p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run this local demonstration.</p></noscript>
+      <footer>Browser-native HTML and JavaScript. No Shiny, WebR, external services or runtime downloads.</footer>
+    </main>
+  </div>
+</body>
+</html>

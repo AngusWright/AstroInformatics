@@ -1,0 +1,68 @@
+# From Posterior Landscape to Scientific Answer
+
+Open index.html directly, or serve it alongside TeachingTools. All mathematics
+and Canvas rendering run locally with no R, Shiny, WebR or runtime downloads.
+The existing app.R and model.R are retained unchanged.
+
+Lecture: https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3b_html.html
+
+## Model and interpretation
+
+The normalised posterior is a two-component correlated Gaussian mixture.
+The narrow component has mean (-1,0), SDs (0.23,0.3); the broad component has
+mean (1.3,1), equal adjustable SDs, and weight w. Both have correlation 0.45.
+The exact marginal is (1-w)*Normal(x|-1,0.23) + w*Normal(x|1.3,width).
+The selected interval has width 0.6 and its exact probability uses weighted
+Normal-CDF differences, integrated over every real nuisance y.
+
+The heatmap contains density, not per-pixel probability. Its finite-window
+integral uses midpoint sums with dx*dy; numerical column integration uses dy.
+Neither integration nor interval mass uses a maximum/profile. The tallest mode
+can belong to the component with the smaller total mass.
+
+## Intentional differences from R
+
+- The analytic model, defaults, guided cases and lecture are unchanged.
+- The image is a 180x180 cell-centred grid rather than 250x250 endpoints.
+  Density contours are omitted; square-root-stretched colours are retained.
+- A labelled finite-window probability is added, without renormalising the
+  omitted tails outside x in [-5,7], y in [-6,8]. Numerical window mass and
+  grid mode are approximations; the marginal and interval remain analytic.
+- An optional grid profile is normalised over the displayed x window only
+  to compare shapes. It is explicitly not a posterior marginal or an alternate
+  interval probability.
+- The seed and Re-evaluate action are intentionally inert mathematically:
+  this lesson is deterministic, so no artificial simulation or animation is
+  introduced. The common seed validation/range remains available.
+
+## Files and exports
+
+Runtime: index.html, model.js, app.js, and shared TeachingTools/statistics.js,
+browser.js, lesson.js, browser.css. No additional runtime assets.
+Pure CommonJS/browser global MarginalisationModel exports mixtureJoint,
+mixtureMarginal, mixtureInterval, integrateGrid and compute.
+compute parameters: seed, weight, width, centre, show_profile.
+integrateGrid returns y-major joint rows, x/y cell centres, dx/dy, numerical
+column integrals and window mass. Invalid inputs throw Astro.ValidationError.
+
+## Validation
+
+From the repository root, with Node 22+ and Chrome:
+
+    node Marginalisation/test_model.js
+    mkdir -p Marginalisation/.browser-profile
+    env -u HTML_SITE_ROOT TMPDIR="$PWD/Marginalisation/.browser-profile" node Marginalisation/test_browser.js
+    rmdir Marginalisation/.browser-profile
+
+Numerical tests compare retained R density/CDF values, independently integrate
+joint columns and the marginal, test the narrow-component 68.268949% interval,
+and compare two grid resolutions against an independent R conditional-Normal
+window integral (w=.7, width=2: 0.99759719104748223).
+They also distinguish profiling from integration and cover invalid settings.
+
+    Rscript -e 'source("Marginalisation/model.R"); print(mixture_interval(.9,1.5,.7,1.5),digits=17)'
+
+This returns 0.11072054431171223. Browser tests inspect real plot colours,
+profile visibility, fixed joint density when only the selected interval changes,
+wide-component omitted mass and seed invariance, plus the shared presets,
+reset, invalid seed, keyboard tabs, mobile and offline-file checks.

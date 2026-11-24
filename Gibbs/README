@@ -49,13 +49,13 @@ The browser runner uses Node built-ins only, a temporary isolated Chrome
 profile, and a loopback-only static server. It closes both when finished.
 Tests also check that the page requests no external or Shiny/WebR assets.
 
-Export all apps for GitHub Pages:
-  Rscript deploy.R
+Build the HTML tools for GitHub Pages:
+  node deploy.js
 
-The catalogue's explicit static_files manifest copies only index.html,
-styles.css, gibbs.js, and app.js into docs/Gibbs, and preserves the shared
-statistics.js path under docs/TeachingTools. No R payload or editor page is
-deployed for Gibbs. Unconverted tools retain their existing exporters.
+The html-tools.json manifest copies index.html, styles.css, gibbs.js, and
+app.js into _site/Gibbs, and statistics.js into _site/TeachingTools.
+The clean Pages artifact contains only native HTML tools and shared assets.
+All twenty tools are native HTML; their R references are not published.
 
 The previous app.R and gibbs.R are retained as an R/Shiny numerical reference,
 not loaded by the HTML tool or copied into its Pages directory. Their existing

@@ -1,0 +1,64 @@
+# A Sky Full of False Discoveries
+
+Open index.html directly, or serve this directory alongside TeachingTools. The
+page runs entirely in the browser, including offline file:// use. No R, Shiny,
+WebR, package installation, external assets or runtime network access is needed.
+The retained app.R and model.R remain unchanged reference implementations.
+
+Lecture: https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4a_html.html
+
+## Model and interpretation
+
+Every cell has independent standard-Normal noise. At threshold z the local null
+tail probability is Phi(-z), doubled for either sign. Among N0 searched null
+cells, FWER = -expm1(N0 * log1p(-p)); expected false discoveries = N0*p.
+Local p, global FWER, and realised false discovery proportion are separately
+labelled. FDP = false / (true + false) is undefined as an observed fraction with
+no discoveries. FDR is its repeated-survey expectation, assigning empty runs
+zero by convention; the page does not claim that a single FDP is the FDR.
+
+## Intentional differences from R
+
+- The original noise-only model and defaults are retained. Optional Bernoulli
+  source membership and a non-negative positive-direction source amplitude are
+  explicit extensions for comparing true and false discoveries. FWER conditions
+  on the realised number of null cells; there is no FDR-control algorithm.
+- Astro.createRng(seed) is deterministic but not R's generator. Fixed 3,600-cell
+  noise and membership streams preserve overlapping linear-index cells when the
+  area changes. The seed range is 0..2147483647.
+- A cached 100-step percentage reveal replaces R's 60-step animation.
+  Threshold, tails, playback and resizing never redraw observations. Colours
+  alone clip at +/-3 sigma; detection thresholds use untruncated values.
+- A global-risk curve and true/false-discovery accounting supplement the sky.
+
+## Files and exports
+
+Runtime: index.html, model.js, app.js, plus the shared statistics.js, browser.js,
+lesson.js and browser.css in TeachingTools. No additional runtime assets.
+model.js is pure CommonJS or browser global MultipleTestingModel, exporting:
+searchFalseProbability(threshold, trials, twoSided=false), compute(parameters),
+and reveal(result, percentage=100). Expected input errors use Astro.ValidationError.
+compute parameters match form IDs: seed, side, threshold, tails,
+signal_fraction, amplitude. reveal never mutates its cached result.
+
+## Validation
+
+From the repository root, with Node 22+ and Chrome available:
+
+    node MultipleTesting/test_model.js
+    mkdir -p MultipleTesting/.browser-profile
+    env -u HTML_SITE_ROOT TMPDIR="$PWD/MultipleTesting/.browser-profile" node MultipleTesting/test_browser.js
+    rmdir MultipleTesting/.browser-profile
+
+Numerical tests retain R/pnorm references, including z=3, N=1600:
+p=0.0013498980316300946, FWER=0.88482423701342394, expected=2.1598368506081513.
+They also check a 10-sigma tail, zero/one trials, independent repeated-survey
+calibration, explicit true/false counts, fixed observations and invalid inputs.
+R references can be reproduced with:
+
+    Rscript -e 'source("MultipleTesting/model.R"); print(search_false_probability(3,1600))'
+
+Browser tests exercise real Canvas colours, tail/threshold/area controls,
+source injection, cached playback, no-discovery handling and generation
+stability, plus the shared preset/reset, seed validation, tabs, responsive
+mobile and offline-file suite. No commit or build is required.

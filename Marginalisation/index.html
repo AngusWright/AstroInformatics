@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Integrate a correlated Gaussian-mixture posterior and distinguish tall modes from probability mass.">
+  <title>From Posterior Landscape to Scientific Answer</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script><script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script><script src="model.js" defer></script><script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>From landscape to scientific answer</h1><p>A narrow, tall peak can contain less probability than a broad, low one.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3b_html.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Posterior settings</summary>
+        <form id="controls" novalidate>
+          <label for="weight">Broad-component weight <output for="weight"></output></label>
+          <input id="weight" type="range" min="0.05" max="0.95" step="0.05" value="0.65">
+          <label for="width">Broad component SD <output for="width"></output></label>
+          <input id="width" type="range" min="0.5" max="2" step="0.1" value="1">
+          <label for="centre">Centre of highlighted x interval <output for="centre"></output></label>
+          <input id="centre" type="range" min="-2" max="3" step="0.1" value="1.2">
+          <label class="checkbox"><input id="show_profile" type="checkbox"> Compare with a normalised profile</label>
+          <label for="seed">Seed (unused: exact analytic model)</label>
+          <input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <div class="transport"><button id="redraw" type="button">Re-evaluate</button><button id="reset" type="button">Reset</button></div>
+      </details>
+      <h2>Guided examples</h2>
+      <div class="transport"><button type="button" data-preset="tall">Tall is not most probable</button>
+        <button type="button" data-preset="narrow">Mostly narrow</button>
+        <button type="button" data-preset="profile">Integration versus profiling</button></div>
+      <p class="local-note">A specified, normalised toy posterior, not an inferred dataset. No simulation or network access is needed.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>Marginalisation adds probability across nuisance-parameter values; it does not select the best one.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Lesson views">
+        <button id="tab-explore" role="tab" aria-selected="true" aria-controls="panel-explore" tabindex="0">Explore</button>
+        <button id="tab-explain" role="tab" aria-selected="false" aria-controls="panel-explain" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric">Broad-component probability<strong id="broad-mass" data-result></strong></div>
+          <div class="metric">Probability in highlighted interval<strong id="interval-mass" data-result></strong></div>
+          <div class="metric">Approximate marginal mode<strong id="mode" data-result></strong></div>
+          <div class="metric">Approx. image-window probability<strong id="window-mass" data-result></strong></div>
+        </div>
+        <div class="plot-grid">
+          <article class="card"><h2>Joint density p(x, y)</h2>
+            <canvas id="joint" role="img" aria-label="Square-root-stretched joint posterior density. A teal vertical strip marks the x interval integrated over all nuisance y."></canvas>
+            <p class="hint">Colour shows density, not probability per pixel. The teal strip continues beyond the finite image in y.</p>
+          </article>
+          <article class="card"><h2>Integrate over all y to obtain p(x)</h2>
+            <canvas id="marginal" role="img" aria-label="Exact marginal density in purple with the selected interval shaded teal. Optional orange dashed normalised profile differs from integration."></canvas>
+            <div class="legend"><span class="blue">Purple: exact marginal</span><span class="green">Teal area: interval probability</span><span class="orange">Dashed, if selected: profile, not a posterior</span></div>
+          </article>
+        </div>
+        <p id="interval-summary" class="notice"></p>
+        <div class="table-wrap"><table aria-label="Component probability versus peak density">
+          <thead><tr><th>Component</th><th>Probability mass</th><th>Weighted joint peak density</th><th>SDs (x, y)</th></tr></thead>
+          <tbody id="components"></tbody>
+        </table></div>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol><li>Select <strong>Tall is not most probable</strong>. The narrow component is taller, but the broad component contains 70% of the probability.</li>
+          <li>Widen the broad component while holding its weight fixed. Its peak falls, but its integrated probability does not.</li>
+          <li>Move the interval: its width stays 0.6. Read the area under the marginal, not the height of the joint peak.</li>
+          <li>Compare integration with the optional profile. The profile keeps only the best y for each x, losing the extent of the nuisance-parameter region.</li></ol>
+        <h2>The model and its area factors</h2>
+        <p>This is the R lesson's two-component Gaussian mixture. The narrow component has mean (&minus;1, 0), SDs (0.23, 0.3); the broad component has mean (1.3, 1) and equal adjustable SDs. Both have correlation 0.45. Their weights are (1 &minus; w) and w and sum to one over the whole plane.</p>
+        <p>The exact marginal is p(x) = (1 &minus; w) Normal(x | &minus;1, 0.23) + w Normal(x | 1.3, s). The highlighted probability is the corresponding weighted difference of Normal CDFs at centre &plusmn; 0.3, integrated over <em>all</em> y. It does not depend on image resolution.</p>
+        <p>A density is not a probability. Numerically integrating the image uses &Sigma;<sub>i,j</sub> p(x<sub>i</sub>, y<sub>j</sub>) &Delta;x &Delta;y, and projecting a column uses &Sigma;<sub>j</sub> p(x, y<sub>j</sub>) &Delta;y. The image-window mass uses midpoint quadrature with these area factors. Probability outside x &isin; [&minus;5, 7], y &isin; [&minus;6, 8] is retained as omitted mass, not renormalised away.</p>
+        <h2>Integration is not maximisation</h2>
+        <p>Profiling maximises p(x,y) over y; conditioning fixes y; marginalisation integrates y out. The optional orange curve is a grid profile rescaled to unit area over the displayed x window <em>only to compare its shape</em>. It is not a marginal probability density or a second answer for the interval probability.</p>
+        <p>The image uses a square-root colour stretch to reveal low-density structure. The table gives each weighted component's own peak density, not the height of the combined mixture. Neither peak is a probability or a credible-region boundary. The approximate mode uses the displayed grid and is not the analytic interval calculation.</p>
+        <p>The browser retains the R model and exact marginal. It uses a 180 &times; 180 cell-centred image instead of R's 250 &times; 250 endpoint grid, omits density contours, and adds a labelled diagnostic profile and finite-window integral. The seed has no effect on this deterministic model.</p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run this local demonstration.</p></noscript>
+      <footer>Browser-native HTML and Canvas. No Shiny, WebR, runtime downloads or data upload.</footer>
+    </main>
+  </div>
+</body>
+</html>

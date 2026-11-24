@@ -1,0 +1,73 @@
+Counting Photons
+================
+
+Open index.html directly (file://), or serve it beside TeachingTools. Native
+offline HTML/Canvas/JavaScript; no Shiny, WebR, CDN, modules or installation.
+app.R and model.R remain unchanged reference sources.
+
+Principle: exact Poisson fluctuations are discrete and asymmetric at low counts;
+a Gaussian is an approximation, never the sampler. For known constant rate r
+and elapsed exposure t, N~Poisson(lambda=r*t), E[N]=Var[N]=lambda, SD=sqrt(lambda),
+relative SD=1/sqrt(lambda) for positive lambda. This is a sampling model, not an
+interval inferred from the realised stream. No background, detector dead time,
+saturation, clustering or time variation is modelled.
+
+Two random experiments, cached playback
+---------------------------------------
+The stream uses exact exponential waiting times -log(U)/r. A seed fixes
+unit-rate event times through the largest supported optical exposure (160);
+rate rescales those times, and exposure reveals their prefix. A separate set
+of 3000 seeded uniforms is inverse-transformed using the Poisson recurrence
+at each of 61 cached frames. Fixed quantiles couple successive histogram
+frames monotonically; these are NOT 3000 event timelines with independent
+increments. Only the displayed stream is an actual Poisson event timeline.
+
+All frames are cached. Playback/scrubbing and the Show/Hide Gaussian choice
+never resample data. New realisation advances the seeded Astro RNG; Reset
+restores defaults. The original R/browser RNG sequences intentionally differ.
+
+Gaussian comparison and native differences
+-------------------------------------------
+Preserves the original 60 steps, 3000 replicates, rate/exposure controls,
+few/many presets, continuity correction and lecture link. Adds a zero-rate
+dark-source example and empirical mean/variance alongside the theoretical
+expectation/variance. Zero rate/exposure yields a point mass at zero, SD zero,
+undefined relative SD and no nondegenerate Gaussian.
+
+Normal comparison masses integrate each integer bin [k-.5,k+.5], so they are
+comparable to Poisson masses and empirical frequencies, not density heights.
+The negative tail is not removed or renormalised; P(Normal<-.5) is displayed
+even when the curve is hidden. All observed counts are shown; theoretical
+outer tails may be outside the finite plot window without renormalisation.
+The inverse-CDF implementation supports the full control range 0<=lambda<=160
+using floating-point recurrence, not a large-lambda Normal approximation.
+Independent uniform/event streams remove an incidental retained-R coupling in
+which changing rate changed how many RNG values preceded the count quantiles.
+
+Numerical API (model.js, browser PhotonCountingModel and CommonJS)
+---------------------------------------------------------------
+defaults; STEPS=60; REPEATS=3000; MAX_LAMBDA=160; validate(parameters)
+poissonPmf(integerCount, lambda), poissonTable(lambda) -> {pmf,cdf}
+poissonQuantile(probability, lambda) -> integer (Infinity for p=1, lambda>0)
+gaussianMass(integerCount, lambda) -> continuity-corrected mass (null at zero)
+prepare(seed) -> seed, fixed uniforms and unit-rate arrival times
+compute(parameters, optionalPrepared) -> cached frames, stream and metadata
+atFrame(result, integerFrame) -> elapsed exposure, lambda, arrivals, counts,
+  empirical moments, exact/Normal masses, negative mass and plot support
+Invalid values throw Astro.ValidationError. Parameters: seed integer
+0..2147483647, rate 0..8, exposure 0.5..20, gaussian show/hide.
+
+Validation (from the repository root)
+------------------------------------
+node PhotonCounting/test_model.js
+node PhotonCounting/test_browser.js
+Numerics use independently R-calibrated qpois/dpois/pnorm/qexp values (including
+extreme quantiles at lambda=160), sampling moments, low-count approximation
+failure, monotone coupled histograms, stream prefixes, zero rate/exposure,
+seed stability and boundaries. Chrome verifies plotted distributions, actual
+arrival marks, cached Show/Hide/playback, metrics, errors, mobile and file://.
+For a repository-local Chrome profile, create PhotonCounting/.browser-state,
+set TMPDIR to its absolute path for the test, then remove the empty directory.
+
+Runtime assets: index.html, model.js, app.js, plus
+../TeachingTools/{statistics.js,browser.js,browser.css,lesson.js}. No others.

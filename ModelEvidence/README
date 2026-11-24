@@ -1,0 +1,74 @@
+ModelEvidence — Is That Spectral Line Real?
+==========================================
+
+Open index.html directly, or serve it with TeachingTools alongside. The Canvas
+lesson uses JavaScript only: no Shiny, WebR, runtime downloads or data upload.
+app.R and model.R are unchanged reference implementations.
+
+Model: exact, normalised evidence
+--------------------------------
+There are 70 independent Gaussian flux measurements from 500 to 510 nm:
+  flux_i ~ Normal(1 + A*g_i, sigma^2)
+  g_i = exp[-0.5*((wavelength_i-505)/0.35)^2].
+Continuum, centre, width and noise SD are known. H0 fixes A=0. H1 has the
+PROPER Gaussian amplitude prior A ~ Normal(0,w^2), allowing both signs.
+The finite positive SD is explicit (0.1–10); the Gaussian's SUPPORT is
+unbounded. This is not a finite-support uniform prior, an unnormalised
+Gaussian, or an improper flat-prior limit.
+
+Ahat = sum[g_i*(flux_i-1)]/sum(g_i^2), s = sigma/sqrt(sum(g_i^2)).
+Under H0, Ahat ~ Normal(0,s^2); under H1, Ahat ~ Normal(0,s^2+w^2).
+Their predictive-density ratio at Ahat is BF10 exactly. Both predictive
+densities have unit total area; they are not rescaled to their peaks/window.
+
+The port also reports full-spectrum log evidence densities. If RSS is the
+residual sum of squares around the best-fit amplitude, the shared factor is
+  log C = -n/2 log(2*pi*sigma^2) - RSS/(2*sigma^2)
+          + 0.5 log(2*pi*s^2).
+log Z0 = log C + log Normal(Ahat|0,s^2);
+log Z1 = log C + log Normal(Ahat|0,s^2+w^2).
+The shared residual factor cancels in the ratio. The maximum likelihood ratio
+instead has log value 0.5*(Ahat/s)^2 and is NOT used as model evidence.
+
+Model probability assumes equal prior model odds. The page explains proper
+normalisation, the Occam trade-off, possible absorption, probability rounding,
+and why results do not account for searching over unknown line centres.
+Original controls, presets and guides remain. No animation is introduced:
+this lesson compares two static predictive models for one fixed spectrum.
+
+Intentional differences
+-----------------------
+Seeded browser draws use Astro.createRng rather than R's RNG and therefore
+are not bitwise-identical to R. Full-spectrum evidences, predictive log
+densities and the conditional H1 amplitude posterior are added transparently.
+The predictive grid resolves the narrow null even for a broad alternative.
+The alternative prior is exactly the retained R model, not an approximation
+or a substituted bounded prior. Changing it never changes data or the fit.
+
+Numerical API / checks
+---------------------
+CommonJS require("./model.js") / browser ModelEvidenceModel exports defaults,
+lineEvidence(estimate,error,priorSd), and compute(parameters). The latter
+returns the spectrum, template, amplitude estimate/SE, evidence summaries and
+fully normalised logEvidenceNull/logEvidenceLine. lineEvidence also gives
+log predictive densities, log Bayes factor, equal-odds probability,
+log maximum likelihood ratio and the H1 amplitude posterior mean/SD.
+Input validation uses Astro.ValidationError in both browser and Node.
+
+Run from the repository root with Node 22+:
+  node --test ModelEvidence/test_model.js
+  TMPDIR="$PWD/ModelEvidence" node ModelEvidence/test_browser.js
+
+Checks include independent R fixtures, the analytic zero-estimate Occam
+factor, sign symmetry, the narrow-prior null limit, numerical quadrature of
+likelihood times prior, full-spectrum multivariate-normal normalisation,
+data/fit invariance under prior changes, seeded stability and boundaries.
+Browser tests check both Canvas panels, unchanged spectra, finite boundary
+results and matching full/predictive evidence ratios. Shared checks cover
+presets, reset, invalid seed, tabs, responsive layout and file:// loading.
+
+Runtime assets (no others)
+-------------------------
+index.html, model.js, app.js, ../TeachingTools/statistics.js,
+../TeachingTools/browser.js, ../TeachingTools/browser.css,
+../TeachingTools/lesson.js.

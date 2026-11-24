@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Drag contaminating stellar velocities through fixed observations and compare mean, median, scaled MAD, SD and trimmed means.">
+  <title>One Bad Star</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>One bad star</h1>
+      <p>Drag a contaminating velocity through a stable stellar sample. Which summaries move with it?</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section1b_html.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Measurements and contamination</summary>
+        <form id="controls" novalidate>
+          <label for="position">Contaminant velocity (km/s) <output for="position"></output></label>
+          <input id="position" type="range" min="-12" max="12" step="0.2" value="8">
+          <label for="contaminants">Number of replaced measurements <output for="contaminants"></output></label>
+          <input id="contaminants" type="range" min="0" max="10" step="1" value="1">
+          <label for="n">Total sample size <output for="n"></output></label>
+          <input id="n" type="range" min="20" max="120" step="5" value="40">
+          <label for="trim">Fraction trimmed from each tail <output for="trim"></output></label>
+          <input id="trim" type="range" min="0" max="0.4" step="0.05" value="0.1">
+          <label for="seed">Random seed</label>
+          <input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <h2 class="eyebrow">Guided examples</h2>
+        <div class="transport"><button type="button" data-preset="clean">Clean sample</button><button type="button" data-preset="extreme">One extreme star</button><button type="button" data-preset="many">Many contaminants</button></div>
+        <p class="hint">Drag the orange handle or an orange observation in the upper figure. The velocity slider provides the same control with a keyboard.</p>
+        <div class="transport"><button id="redraw" type="button">New realisation</button><button id="reset" type="button">Reset</button></div>
+      </details>
+      <p class="local-note">Clean observations, contaminant offsets and vertical jitter stay cached while you move the outliers. No server, libraries or uploads.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>Sensitivity to contamination matters. But robust and non-robust summaries can estimate different population properties.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Demonstration views">
+        <button id="tab-explore" type="button" role="tab" aria-selected="true" aria-controls="panel-explore" tabindex="0">Explore</button>
+        <button id="tab-explain" type="button" role="tab" aria-selected="false" aria-controls="panel-explain" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric"><strong id="mean" data-result></strong>Sample mean</div>
+          <div class="metric"><strong id="median" data-result></strong>Sample median</div>
+          <div class="metric"><strong id="sd" data-result></strong>Sample SD (n &minus; 1)</div>
+          <div class="metric"><strong id="nmad" data-result></strong>Gaussian-scaled nMAD</div>
+          <div class="metric"><strong id="trimmed" data-result></strong>Trimmed mean</div>
+        </div>
+        <article class="card">
+          <h2>A stable population, an unstable summary?</h2>
+          <canvas id="sample-plot" style="touch-action:none" role="img" aria-label="Measured velocities, draggable contaminant handle, mean plus or minus SD, median plus or minus nMAD, and trimmed mean" aria-describedby="drag-note"></canvas>
+          <div class="legend"><span class="orange">Orange: replacements and mean &plusmn; SD</span><span>Purple: median &plusmn; nMAD</span><span class="blue">Blue: trimmed mean</span><span class="green">Teal dashed: true centre 0</span></div>
+          <p id="drag-note" class="hint">Drag the orange handle horizontally, or use the contaminant velocity slider. Horizontal bars show dispersion, not confidence intervals.</p>
+          <p id="sample-note" class="hint"></p>
+        </article>
+        <article class="card" style="margin-top:16px">
+          <h2>How location estimates respond to the same contamination</h2>
+          <canvas id="influence-plot" class="small-canvas" role="img" aria-label="Mean, median and trimmed mean versus contaminant velocity, holding all underlying measurements fixed"></canvas>
+          <div class="legend"><span class="orange">Orange: mean</span><span>Purple: median</span><span class="blue">Blue: trimmed mean</span></div>
+          <p class="hint">A finite-sample contamination-response curve, not the asymptotic influence function. The dashed marker is the current velocity.</p>
+        </article>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol>
+          <li>Move one contaminant from &minus;12 to +12 km/s. The mean follows it; the median eventually stops moving.</li>
+          <li>Increase the number of replaced measurements without changing the clean population. At 10 of 20 measurements, half the sample is contaminated: no robust summary is a magic cure.</li>
+          <li>Choose a clean sample. Mean, median and trimmed mean need not agree exactly, even for a symmetric generating population.</li>
+          <li>Set the trim fraction to zero, then increase it. Trimming removes a fixed number of observations from <em>both</em> tails, not just points labelled contaminants.</li>
+        </ol>
+        <h2>Location and dispersion are different</h2>
+        <p>The clean population is Normal(0,1) in illustrative velocity units. The first chosen number of observations are <em>replaced</em>, not supplemented, by values at the contaminant velocity plus fixed Normal(0,0.1<sup>2</sup>) offsets. Moving them preserves the remaining observations and every offset.</p>
+        <p>The median is the central order statistic, or the average of the two central values for even n. Sample SD uses the n&minus;1 denominator. nMAD = median(|x &minus; median(x)|) / &Phi;<sup>&minus;1</sup>(0.75), with &Phi;<sup>&minus;1</sup>(0.75) &asymp; 0.67448975. This scaling is Gaussian-consistent, not a claim that nMAD equals the SD of every distribution or is unbiased in small samples.</p>
+        <p>The bars show mean &plusmn; one sample SD and median &plusmn; one nMAD. They describe location and dispersion, <strong>not</strong> confidence intervals, standard errors or uncertainty on the mean/median.</p>
+        <h2>Trimming and contamination response</h2>
+        <p>The HTML port adds a trimmed-mean control and a response plot to the original R lesson. For trim fraction t, it sorts the observations, removes floor(nt) values from each end, and averages the rest, matching R's mean(x, trim=t). A 10% trim is per tail, not 10% total. The blue marker is a location only; it has no implied error bar.</p>
+        <p>The lower curves move the same replacement cluster over the full velocity range while fixing the clean values and offsets. For c replacements, the sample mean has slope c/n. Median and trimmed-mean response can flatten for an isolated extreme, but enough contamination still moves them. These curves are finite-sample diagnostics, not formal influence functions or robustness guarantees.</p>
+        <h2>Which population do you want to describe?</h2>
+        <p>Mean and median answer different questions for an asymmetric population. A contaminant-resistant estimate may describe a central population well, but discarding a genuine secondary population can remove scientifically important information. This example does not identify which real observations are “bad”.</p>
+        <p>The browser caches 120 clean values, ten replacement offsets and vertical jitter for each seed. Increasing n reveals a longer prefix; seed changes and New realisation generate a new cache. The browser RNG is not R's RNG, so individual draws differ for the same seed.</p>
+      </section>
+      <footer><a href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section1b_html.html">Lecture: Mean, Median, Standard Deviation, and nMAD</a> &middot; <a href="../">All demonstrations</a></footer>
+    </main>
+  </div>
+</body>
+</html>

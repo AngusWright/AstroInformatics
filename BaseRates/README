@@ -1,0 +1,71 @@
+# Why Reliable Detectors Still Find Impostors
+
+Open index.html directly, or serve it alongside TeachingTools. The survey,
+Bayesian calculation and Canvas plots run locally without R, Shiny, WebR,
+external assets or data upload. Existing app.R/model.R are unchanged references.
+
+Lecture: https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2b_html.html
+
+## Model and interpretation
+
+For each of 10,000 independent objects, the real-event probability is
+q=10^log_prevalence. Real events are flagged with sensitivity s; non-events
+with false-positive probability f. These probabilities are known inputs.
+The theoretical positive predictive value is q*s / [q*s+(1-q)*f], not s.
+
+One mosaic square is one actually flagged object. Expected and realised
+true/false counts are separate in a stacked-bar comparison and outcome table.
+Expected counts may be fractional and are never rounded into pretend mosaic
+objects. The Bayesian probability uses full-precision probabilities, not the
+displayed, rounded counts or the observed genuine fraction. Rare probabilities
+are shown with significant figures rather than forced to 0.0%.
+
+An empty survey has no realised genuine fraction; it does not imply zero PPV.
+If the probability model itself assigns zero probability to all flags, PPV is
+undefined (null in the pure model API). Hiding truth suppresses all
+truth-dependent realised metrics/bars as well as candidate colours.
+
+## Intentional differences from R
+
+- R defaults, assumptions and guided rare/common cases are retained.
+- log10 prevalence extends from -4 down to -6, and the false-positive rate
+  permits zero, exposing rare/empty limits rather than hiding them.
+- Expected/realised outcome comparisons and a zero-false-positive preset are
+  added. Undefined observed fractions are explicitly labelled.
+- Astro.createRng(seed), not R's stream, generates fixed survey-wide truth and
+  flag draws. Playback reveals a cached survey in 100 percentage steps rather
+  than 60. Hiding truth, playback and resizing cannot change the data.
+- Seed validation supports 0..2147483647.
+
+## Files and exports
+
+Runtime: index.html, model.js, app.js, plus shared statistics.js, browser.js,
+lesson.js and browser.css in TeachingTools. No additional runtime assets.
+Pure CommonJS/browser global BaseRatesModel exports positivePredictiveValue,
+expectedCounts, compute and reveal. compute parameters match form IDs:
+seed, log_prevalence, sensitivity, false_positive, reveal.
+reveal(result, percentage=100) returns actual/expected confusion counts,
+scanned objects, candidate indices and an observed genuineFraction or null.
+Expected invalid inputs throw Astro.ValidationError.
+
+## Validation
+
+From the repository root, with Node 22+ and Chrome:
+
+    node BaseRates/test_model.js
+    mkdir -p BaseRates/.browser-profile
+    env -u HTML_SITE_ROOT TMPDIR="$PWD/BaseRates/.browser-profile" node BaseRates/test_browser.js
+    rmdir BaseRates/.browser-profile
+
+Numerical tests check retained R PPVs (0.48969072164948452 at q=.01,
+s=.95,f=.01; 0.0094115316029324356 at q=.0001), independent natural
+frequencies 950/(950+9990), fractional expectations, empty/zero-probability
+limits, explicit confusion counts, identity-preserving display controls,
+cached partial surveys and invalid inputs.
+
+    Rscript -e 'source("BaseRates/model.R"); print(positive_predictive_value(.0001,.95,.01),digits=17)'
+
+Browser tests assert actual coloured mosaic pixels and metrics, hidden truth,
+rare nonzero PPV, expected-versus-realised meaning, a no-flags run with
+theoretical PPV=1, cached animation, plus the shared presets/reset, seed
+validation, keyboard tabs, mobile and offline-file checks.

@@ -1,0 +1,84 @@
+Turning Uniform Randomness into a Universe
+=========================================
+
+Open index.html directly (file://), keeping its sibling TeachingTools
+directory, or use a static server. The HTML lesson requires no R, Shiny,
+WebR, external libraries, install, build or network. Original app.R and
+model.R are preserved unchanged.
+
+Lecture:
+https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2d_html.html
+
+Explore
+-------
+Choose a bounded stellar-mass power law, Exponential(rate=1), or
+Log-normal(log-mean=0, log-SD=0.7). The power-law exponent ranges from 0.5
+to 3.5; sample size ranges from 50 to 1500. Log-uniform and steep-population
+presets, the original guided experiments and lecture link are retained.
+
+Rewind and step/play to trace U horizontally to the CDF, then vertically
+to log10(x). Up to twelve recent guides are shown. The lower histogram is
+in log10 units and the analytic target includes its Jacobian:
+  p_z(z) = ln(10) * 10^z * p_x(10^z).
+The CDF is F(10^z), with no density Jacobian.
+
+For the bounded power law, p(x)=x^(-alpha)/C on [L,H]=[0.1,20].
+If k=1-alpha, C=(H^k-L^k)/k. At alpha=1 the exact logarithmic limit is
+C=ln(H/L), F(x)=ln(x/L)/ln(H/L), Q(u)=L*(H/L)^u. The nonzero-k branch
+uses expm1/log1p to stay accurate near one, without replacing nearby
+exponents by one. Q(0)=L and Q(1)=H exactly.
+
+The reported discrepancy is the two-sided one-sample KS statistic, not a
+p-value. With no revealed draws, the target remains visible but no sample
+discrepancy is claimed.
+
+Intentional HTML differences
+---------------------------
+* Uses a cached 1500-value Astro.createRng(seed) uniform sequence, not R's
+  RNG. Equal seed numbers do not give R's individual observations.
+  Family/exponent changes transform those same uniforms; n and animation
+  select prefixes. No randomness is consumed by rendering or playback.
+* Uses 100 percentage frames rather than 60, initially paused at the result.
+* Shows exact bounded power-law support. For unbounded distributions the
+  view includes the 0.00001/0.99999 target quantiles and all selected draws,
+  even at frame zero. Target probability in the window is reported.
+  Neither the target nor histogram is renormalised to hide omitted tails.
+* Seed supports the shared browser range 0 through 2147483647.
+
+Model API
+---------
+model.js exports these pure helpers via CommonJS or InverseSamplingModel:
+  distribution(family, slope=2.35)
+    Returns label, cdf(x), density(x), quantile(p), plus lower/upper for
+    bounded power laws. All target densities are normalised.
+    Unbounded positive targets have Q(0)=0 and Q(1)=Infinity.
+  validate(parameters)
+    Checks seed, family, slope and n using Astro.ValidationError.
+  prepare(seed)
+    Returns {seed, uniforms}, with 1500 strictly interior uniform draws.
+  ksStatistic(probabilities)
+    Exact empirical jump-based maximum discrepancy; null for an empty list.
+  compute(parameters, prepared?)
+    Returns data, parameters, target, uniforms, values and log10 limits.
+  atFrame(result, frame=100)
+    Returns count, uniforms, values and discrepancy for a cached prefix.
+  logDensity(target, z)
+    Density of log10(X), including the Jacobian and exact support endpoints.
+
+Files and validation
+--------------------
+Runtime: index.html, model.js, app.js, plus
+../TeachingTools/{statistics.js,browser.js,browser.css,lesson.js}.
+No extra runtime assets. Tests and this README are development files.
+
+From the repository root, using Node 22+ and installed Chrome:
+  node --test InverseSampling/test_model.js
+  env -u HTML_SITE_ROOT TMPDIR="$PWD/InverseSampling" node InverseSampling/test_browser.js
+
+Numerical tests use independent R-calibrated power-law values, analytic
+exponential/log-normal answers, quadrature normalisation including alpha=1
+and nearby exponents, exact endpoints, a two-sided KS oracle, fixed draw
+prefixes and invalid cases. Real Chrome tests cover all families, inactive
+exponent behaviour, parameter boundaries, target-only zero frame, visible
+guides/histograms, playback, presets/reset, new-realisation preservation,
+validation, keyboard tabs, responsive mobile and file:// loading.

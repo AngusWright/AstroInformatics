@@ -1,0 +1,86 @@
+One Bad Star
+============
+
+Open index.html directly (file://), alongside the sibling TeachingTools
+directory, or serve both statically. No R, Shiny, WebR, external libraries,
+install, build or network is needed for the HTML page. The original app.R
+and model.R remain unchanged.
+
+Lecture:
+https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section1b_html.html
+
+Explore
+-------
+The clean population is Normal(0,1). Choose 20-120 measurements and replace
+0-10 of them with velocities near a controllable -12 to +12 km/s centre
+(fixed Gaussian offsets of SD 0.1). Drag the orange handle or an orange
+observation; the velocity slider provides the same accessible keyboard
+control. Clean sample, one extreme star and many-contaminant presets retain
+the original examples and lecture guidance.
+
+The summary bars are mean +/- sample SD and median +/- Gaussian-scaled
+MAD. They describe location and dispersion, NOT confidence intervals or
+standard errors. SD uses n-1. The median averages the two central values
+for an even sample; nMAD=median(abs(x-median(x)))/qnorm(0.75), with no
+additional finite-sample correction. Gaussian consistency does not make
+nMAD equal the SD of an arbitrary non-Gaussian population.
+
+The added trimmed mean removes floor(n*trim) observations from each tail
+of the sorted sample, as R's mean(x, trim=trim) does. It is not a procedure
+that selectively removes only the orange points.
+
+Intentional HTML differences
+---------------------------
+* Adds real pointer/touch dragging, a trim-fraction control (0-0.4 per tail,
+  default 0.1), trimmed-mean metric and location marker.
+* Adds finite-sample contamination-response curves for mean, median and
+  trimmed mean. These are not asymptotic influence functions. The mean's
+  slope is replacements/n; resistance can fail with enough contaminants.
+* Keeps a wide velocity axis so dragging the same replacement cluster is
+  easy to interpret. Summary bars and observations remain in view.
+* Uses Astro.createRng(seed), not R's RNG, so identical seed numbers yield
+  different individual draws. Caches 120 clean measurements, ten offsets
+  and 120 jitter values. Moving contaminants/trimming never changes them;
+  increasing n uses the same prefix. Dragging after New realisation does
+  not reset its generation.
+* Seed supports the shared browser range 0 through 2147483647.
+
+Mean and median can describe different properties of asymmetric
+populations. Robustness is not permission to discard a scientifically real
+secondary population. Explain makes these qualifications explicit.
+
+Model API
+---------
+model.js is pure CommonJS/browser code (RobustStatisticsModel globally):
+  trimmedMean(values, trim=0.1)
+    Two-sided floor(n*trim) trimming; does not mutate input order.
+  summaries(values, trim=0.1)
+    Returns {mean, median, sd, nmad, trimmed} for at least two finite values.
+  validate(parameters)
+    Checks seed, position, contaminants, n and trim using ValidationError.
+  prepare(seed)
+    Returns {seed, clean, offsets, jitter}, independent of display controls.
+  contaminate(clean, offsets, count, position)
+    Returns a copy replacing the first count observations, not appending.
+  compute(parameters, prepared?)
+    Returns data, parameters, clean, observed, jitter, summaries,
+    cleanSummaries and 121 contamination-response rows in influence.
+
+Files and validation
+--------------------
+Runtime: index.html, model.js, app.js, plus
+../TeachingTools/{statistics.js,browser.js,browser.css,lesson.js}.
+No extra assets are needed; README and tests are not runtime files.
+
+From the repository root, with Node 22+ and Chrome installed:
+  node --test RobustStatistics/test_model.js
+  env -u HTML_SITE_ROOT TMPDIR="$PWD/RobustStatistics" node RobustStatistics/test_browser.js
+
+Numerical tests include R-calibrated odd/even medians, SD and scaled MAD;
+noninteger trim counts; contamination replacement and analytic mean
+response; isolated extremes; half-sample contamination; fixed data/jitter;
+and invalid inputs. Real Chrome tests move the actual handle with mouse
+events, check both drag limits and unchanged clean observations, exercise
+every control/boundary, preserve a new realisation through dragging, and
+cover plot effects, presets/reset, validation, keyboard tabs, mobile and
+offline file loading.

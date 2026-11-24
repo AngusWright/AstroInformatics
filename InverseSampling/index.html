@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Transform uniform random draws through an inverse CDF into a normalized power-law, exponential or log-normal population.">
+  <title>Turning Uniform Randomness into a Universe</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>From randomness to a universe</h1>
+      <p>Follow equally likely uniform draws through a quantile function to build a non-uniform population.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2d_html.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Choose a target population</summary>
+        <form id="controls" novalidate>
+          <label for="family">Positive target distribution</label>
+          <select id="family">
+            <option value="power">Truncated stellar-mass power law</option>
+            <option value="exponential">Exponential</option>
+            <option value="lognormal">Log-normal</option>
+          </select>
+          <label for="slope">Power-law exponent &alpha; <output for="slope"></output></label>
+          <input id="slope" type="range" min="0.5" max="3.5" step="0.05" value="2.35">
+          <p class="hint">Exponent applies only to the power-law family. Its support is 0.1 to 20 illustrative solar masses.</p>
+          <label for="n">Number of random draws <output for="n"></output></label>
+          <input id="n" type="range" min="50" max="1500" step="50" value="500">
+          <label for="seed">Random seed</label>
+          <input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <h2 class="eyebrow">Guided examples</h2>
+        <div class="transport"><button type="button" data-preset="loguniform">Log-uniform power law</button><button type="button" data-preset="steep">Steep stellar population</button></div>
+        <p class="hint">Rewind, then step: go horizontally from a uniform probability to the CDF, then vertically to a sampled value.</p>
+        <div class="transport"><button id="redraw" type="button">New realisation</button><button id="reset" type="button">Reset</button></div>
+      </details>
+      <p class="local-note">The same cached uniform draws are reused across every family, exponent and playback frame. Entirely local; no downloads or uploads.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>If U is Uniform(0,1), then F<sup>&minus;1</sup>(U) follows the target distribution. Uniform probabilities need not produce uniform values.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Demonstration views">
+        <button id="tab-explore" type="button" role="tab" aria-selected="true" aria-controls="panel-explore" tabindex="0">Explore</button>
+        <button id="tab-explain" type="button" role="tab" aria-selected="false" aria-controls="panel-explain" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="transport" aria-label="Animation controls">
+          <button id="play" type="button" class="primary" aria-pressed="false">Play animation</button><button id="step" type="button">Step</button>
+          <button id="rewind" type="button">Rewind</button><button id="finish" type="button">Show result</button>
+          <label for="delay">Pace</label><select id="delay"><option value="100">Fast</option><option value="200" selected>Normal</option><option value="500">Slow</option></select>
+        </div>
+        <label for="frame" class="hint">Draws revealed <span id="frame-label">100 / 100</span></label>
+        <input id="frame" type="range" min="0" max="100" step="1" value="100" style="width:100%">
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric"><strong id="revealed" data-result></strong>Uniform draws transformed</div>
+          <div class="metric"><strong id="ks" data-result></strong>Maximum empirical-CDF discrepancy</div>
+          <div class="metric"><strong id="target-mass" data-result></strong>Target probability inside view</div>
+        </div>
+        <div class="plot-grid">
+          <article class="card">
+            <h2>Uniform probability &rarr; inverse CDF &rarr; value</h2>
+            <canvas id="cdf-plot" role="img" aria-label="Target CDF with horizontal uniform probability guides and vertical inverse-CDF projections"></canvas>
+            <div class="legend"><span>Purple: target CDF</span><span class="orange">Orange guides: latest twelve draws</span><span class="green">Teal dots: transformed draws</span></div>
+            <p id="target-description" class="hint"></p>
+          </article>
+          <article class="card">
+            <h2>The transformed population, on a log scale</h2>
+            <canvas id="density-plot" role="img" aria-label="Density histogram of log10 sampled values and the correctly transformed analytic target"></canvas>
+            <div class="legend"><span class="orange">Orange: revealed draws</span><span class="green">Teal: target density per log10 unit</span></div>
+            <p id="tail-note" class="hint"></p>
+          </article>
+        </div>
+        <p class="notice">Both horizontal axes are log10(value). The density includes the Jacobian ln(10) &times; value; the CDF does not need a density correction.</p>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol>
+          <li>Rewind and step through the first draws. Start at probability U on the vertical axis, move right to the CDF, then down to log10 of the sampled value.</li>
+          <li>Choose the log-uniform preset: &alpha; = 1 gives a straight CDF and a flat density on the log10 scale, not a uniform density in mass.</li>
+          <li>Increase the number of draws. The histogram becomes smoother; the analytic target and the cached uniform sequence do not change.</li>
+        </ol>
+        <h2>A normalized bounded power law, including &alpha; = 1</h2>
+        <p>The stellar-mass illustration uses p(x) = x<sup>&minus;&alpha;</sup>/C on [L,H] = [0.1,20], zero outside. For k = 1 &minus; &alpha;, C = (H<sup>k</sup> &minus; L<sup>k</sup>)/k and the inverse CDF is [L<sup>k</sup> + U(H<sup>k</sup> &minus; L<sup>k</sup>)]<sup>1/k</sup>. At &alpha; = 1 the exact logarithmic limit is C = ln(H/L), F(x) = ln(x/L)/ln(H/L), and F<sup>&minus;1</sup>(U) = L(H/L)<sup>U</sup>.</p>
+        <p>The browser evaluates the nonzero-k formula using expm1/log1p to avoid cancellation near &alpha; = 1; endpoints map exactly to L and H. This is a proper normalized population, not an unnormalised power-law sketch. The other targets are Exponential(rate 1) and Log-normal(log-mean 0, log-SD 0.7).</p>
+        <h2>Changing coordinates changes a density</h2>
+        <p>For z = log10(x), the CDF is F(10<sup>z</sup>), while the density is p<sub>z</sub>(z) = ln(10)10<sup>z</sup>p<sub>x</sub>(10<sup>z</sup>). A density per mass unit cannot be plotted unchanged as a density per logarithmic unit.</p>
+        <h2>Finite samples and finite windows</h2>
+        <p>The discrepancy is the two-sided one-sample Kolmogorov&ndash;Smirnov statistic: max over ordered probabilities U<sub>(i)</sub> of i/N &minus; U<sub>(i)</sub> and U<sub>(i)</sub> &minus; (i&minus;1)/N. It is not a p-value or a model-selection probability. At zero draws there is no empirical discrepancy; only the analytic target is drawn.</p>
+        <p>For unbounded targets the view spans at least the 0.00001 to 0.99999 target quantiles and all selected draws. For a bounded power law it includes the exact support. The target-mass metric reports omitted probability honestly; neither target nor histogram is renormalised to the viewport. Histogram heights divide by <em>all revealed draws</em>.</p>
+        <p>A 1,500-value uniform sequence is cached for each seed. Changing family, exponent or sample count reuses it; playback reveals prefixes in 100 percentage steps, initially paused at the result. The shared browser RNG differs from R's RNG, so matching seed numbers give different individual draws, not different target laws.</p>
+      </section>
+      <footer><a href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section2d_html.html">Lecture: Inversion Sampling</a> &middot; <a href="../">All demonstrations</a></footer>
+    </main>
+  </div>
+</body>
+</html>

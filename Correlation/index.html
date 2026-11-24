@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Distinguish a shared-distance flux correlation from intrinsic and conditional correlation using a seeded galaxy population.">
+  <title>Correlations That Disappear</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>Correlations that disappear</h1>
+      <p>Independent intrinsic properties can look related when distance affects both measurements.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/AstroStatistics_1.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Population and distance slice</summary>
+        <form id="controls" novalidate>
+          <label for="scatter">Independent intrinsic scatter <output for="scatter"></output></label>
+          <input id="scatter" type="range" min="0" max="2" step="0.1" value="0.4">
+          <label for="centre">Centre of log-distance slice <output for="centre"></output></label>
+          <input id="centre" type="range" min="0" max="1" step="0.05" value="0.5">
+          <label for="width">Width of distance slice <output for="width"></output></label>
+          <input id="width" type="range" min="0.05" max="1" step="0.05" value="0.2">
+          <p class="hint">Distance is normalised to [0, 1]. Slices at the ends are clipped to that population. Selecting a slice never resamples the 1,800 galaxies.</p>
+          <label for="seed">Random seed</label>
+          <input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+        </form>
+        <div class="transport"><button id="redraw" type="button">New realisation</button><button id="reset" type="button">Reset</button></div>
+        <h2 class="eyebrow">Guided examples</h2>
+        <div class="transport">
+          <button type="button" data-preset="whole">Whole population</button>
+          <button type="button" data-preset="narrow">Narrow distance slice</button>
+          <button type="button" data-preset="deterministic">No intrinsic variation</button>
+        </div>
+      </details>
+      <p class="local-note">A controlled common-cause example, not a causal discovery algorithm. Entirely local; no installation or data upload.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>An observed association need not be a direct physical relationship. A shared distance can correlate otherwise independent properties.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Lesson views">
+        <button id="tab-explore" role="tab" aria-selected="true" aria-controls="panel-explore" tabindex="0">Explore</button>
+        <button id="tab-explain" role="tab" aria-selected="false" aria-controls="panel-explain" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric">Whole-sample Pearson r<strong id="full-r" data-result></strong></div>
+          <div class="metric">Distance-slice Pearson r<strong id="slice-r" data-result></strong></div>
+          <div class="metric">Intrinsic Pearson r<strong id="intrinsic-r" data-result></strong></div>
+          <div class="metric">Highlighted galaxies<strong id="selected-count" data-result></strong></div>
+        </div>
+        <div class="plot-grid">
+          <article class="card">
+            <h2>Measured fluxes: the same distance enters twice</h2>
+            <canvas id="flux-plot" role="img" aria-label="Log flux in two bands, coloured by shared distance; the selected distance slice is highlighted."></canvas>
+            <div class="legend"><span class="green">Teal: nearby</span><span class="orange">Orange: distant</span><span>Dashed grey: whole-sample fit</span><span class="blue">Purple: slice fit</span></div>
+          </article>
+          <article class="card">
+            <h2>Remove the known distance term</h2>
+            <canvas id="intrinsic-plot" role="img" aria-label="Intrinsic residuals X plus 2Z and Y plus 2Z, which have no direct relation in this generating model."></canvas>
+            <div class="legend"><span>Same galaxies, same highlighted slice</span><span>Residuals: X + 2Z and Y + 2Z</span></div>
+          </article>
+        </div>
+        <p id="population-note" class="notice"></p>
+        <p id="variance-note" class="hint"></p>
+        <p class="hint">Faint dots are the full population; opaque dots are the selected slice. There is <strong>no direct X-to-Y link</strong> in this generating model. A finite slice still contains distance variation; its correlation need not vanish.</p>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Try this</h2>
+        <ol>
+          <li>Choose <strong>Whole population</strong>. Both log-fluxes contain the same distance term, so their apparent relation can be strong.</li>
+          <li>Choose <strong>Narrow distance slice</strong>. Fewer galaxies are highlighted. Compare its correlation with the whole sample and the intrinsic residuals without changing any galaxies.</li>
+          <li>Increase intrinsic scatter. Does a common cause always produce an obvious correlation?</li>
+          <li>Set scatter to zero. The measured fluxes then follow exactly the same distance trend, while both intrinsic properties are constants: their Pearson correlation is undefined, not zero.</li>
+        </ol>
+        <h2>The known common cause</h2>
+        <p>The model is X = −2Z + ε<sub>x</sub> and Y = −2Z + ε<sub>y</sub>, with Z uniform on [0, 1] and independent Normal intrinsic terms of SD σ. Z represents a rescaled log-distance; the flux zero points are arbitrary. There are no flux limits or measurement errors.</p>
+        <p>The whole-population correlation is (1/3)/(1/3 + σ²). Within a distance interval of actual clipped width w, it is (w²/3)/(w²/3 + σ²). These are population values, not the finite sample correlations shown in the cards. Random fluctuations remain, especially in narrow slices.</p>
+        <p>Conditioning on an <em>exact</em> known distance makes the two intrinsic terms independent here. A finite-width slice is not exact conditioning. The residual panel subtracts the known generating distance effect; it is not a fitted deconfounding procedure. For positive scatter, its population correlation and the exact-distance conditional correlation are zero. At zero scatter its variances vanish, so Pearson r is undefined.</p>
+        <p>This demonstration establishes a common cause because its generating model is known. In real observations, conditioning on a convenient variable does not by itself establish causality and can introduce collider bias. Intrinsic correlations, uncertain distances, selection and measurement errors would need their own model.</p>
+        <p>Changing a slice only selects from the cached population. Changing scatter rescales the same intrinsic Normal draws. Only New realisation or a different seed generates a different population.</p>
+        <p><a href="https://anguswright.github.io/LectureNotes/AstroStatistics_1.html">Lecture: Interpreting Correlation and Confounding Variables</a></p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run this local demonstration.</p></noscript>
+      <footer>Browser-native HTML and JavaScript. No Shiny, WebR, external services or runtime downloads.</footer>
+    </main>
+  </div>
+</body>
+</html>

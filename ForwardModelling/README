@@ -1,0 +1,68 @@
+Uncertain Encounters, Many Possible Galaxies
+==========================================
+
+Open index.html directly (file://) or serve this directory with its sibling
+TeachingTools directory. This is native, offline HTML/Canvas/JavaScript: no
+Shiny, WebR, CDN, modules, installation or uploaded data. app.R and model.R
+remain unchanged reference sources.
+
+Principle: propagate encounter-input uncertainty into a family of forward
+predictions. This is a RESTRICTED statistical encounter companion, NOT a
+self-consistent N-body/galaxy-dynamics simulation or a replacement for the
+separate HolmbergSimulation prototype.
+
+Model
+-----
+Forty massless particles orbit a unit-mass softened host. A half-mass perturber
+follows (-5 + speed*time, impact); the indirect term preserves the host-centred
+frame. Softening=0.3. Kick-drift-kick leapfrog: 80 steps, dt=0.1. No live host,
+disc self-gravity, gas, dynamical friction, deflection of the perturber or
+adaptive integration. Input pairs are independent positive log-normals with
+the selected arithmetic means and fractional SD. Twelve members share the
+same initial particle disc and are compared at the same physical time.
+
+The radius>2.5 fraction includes off-screen particles. It is a morphological
+diagnostic, not escaped/unbound mass. The min-max band is the range of twelve
+predictions, not a posterior or confidence interval. Explain contains guided
+examples, limitations, the sampling equation and the original lecture link.
+
+Native differences
+------------------
+The retained equations, particle/member counts, controls and 80-frame semantics
+are preserved. A new small diagnostic plot shows the ensemble median/range
+through elapsed time. All trajectories and summaries are computed once per
+parameter set; playback only reveals them. New realisation advances a seeded
+Astro RNG, Reset restores defaults. Browser and R RNG streams intentionally
+differ; numeric integration is calibrated against retained-R deterministic
+fixtures. Uncertainty slider step is 0.01 (rather than 0.02) so the original
+0.35 close-encounter preset is valid, rather than silently snapping it.
+
+Numerical API (model.js, browser ForwardModellingModel and CommonJS)
+-----------------------------------------------------------------
+defaults; STEPS=80; DT=0.1; MEMBERS=12
+validate(parameters)
+restrictedEncounter(radii, angles, impact, speed, steps=80, dt=0.1)
+  -> trajectory[frame][particle][coordinate]
+compute(parameters) -> nominal/ensemble trajectories, input draws, initial
+  disc, per-frame summaries and integration metadata
+atFrame(result, frame) -> positions, outside fractions, median/min/max,
+  physical time and nominal perturber position; no randomness or integration
+Angles use radians. Parameters are dimensionless. Invalid inputs throw
+Astro.ValidationError. See defaults for all control names and accepted ranges.
+
+Validation (from the repository root)
+------------------------------------
+node ForwardModelling/test_model.js
+node ForwardModelling/test_browser.js
+Numerical tests use retained-R trajectory and R qlnorm input-draw fixtures, an independent nearly
+circular orbit / dt-convergence limit, exact zero-uncertainty collapse,
+seed stability, cached frames and control boundaries. The shared Chrome
+runner additionally covers real controls, plots, invalid input, preset 0.35,
+tabs, reset, playback, mobile and direct file:// access.
+
+The browser runner uses os.tmpdir() for its Chrome profile. If temporary system
+paths are unavailable, create ForwardModelling/.browser-state, set TMPDIR to its
+absolute path for the test command, then remove that empty directory.
+
+Runtime assets: index.html, model.js, app.js, plus
+../TeachingTools/{statistics.js,browser.js,browser.css,lesson.js}. No others.

@@ -28,12 +28,13 @@ The original app.R and conjugate.R remain an R/Shiny reference, not part of
 the served page. Their existing regression checks are retained:
   Rscript Conjugate/test_conjugate.R
 
-Export all apps for GitHub Pages:
-  Rscript deploy.R
+Build the HTML tools for GitHub Pages:
+  node deploy.js
 
-The catalogue copies the explicit local/shared static asset manifest rather
-than exporting an R payload. Obsolete app.json/editor pages are retired only
-for the converted tools; the other lecture tools keep their existing exporter.
+html-tools.json lists the published tools and explicit local/shared assets.
+The clean _site/ artifact contains no R payloads, editor pages, or Shiny/WebR
+runtime. All twenty tools are now native HTML; R implementations remain reference
+source and are not published.
 
 Teaching reference:
 https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3b_html.html#conjugate-priors
