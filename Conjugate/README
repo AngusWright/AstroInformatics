@@ -1,6 +1,6 @@
 Priors and Data: What Matters, and When?
 
-Group: Posterior inference
+Group: Bayesian Statistics & Posterior Inference
 
 An exact, interactive Bayesian updating explorer for Normal-Normal (known
 variance), Beta-Binomial, Gamma-Poisson, and Gamma-Gamma (known shape) models.

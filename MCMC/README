@@ -1,7 +1,7 @@
 Metropolis-Hastings MCMC — standalone browser demonstration
 =========================================================
 
-Group: Posterior inference
+Group: Bayesian Statistics & Posterior Inference
 
 Open index.html directly, or serve this repository with any static web server.
 Keep MCMC/ beside TeachingTools/: the shared CSS, Canvas helpers and numerical

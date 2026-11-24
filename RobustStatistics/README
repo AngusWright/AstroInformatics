@@ -1,7 +1,7 @@
 Mean Sensitivity: One Bad Star
 ============
 
-Group: Further foundations
+Group: Further Foundations
 
 Open index.html directly (file://), alongside the sibling TeachingTools
 directory, or serve both statically. No R, Shiny, WebR, external libraries,
