@@ -1,12 +1,12 @@
 [
   {
-    "path": "ModelEvidence",
-    "title": "Bayesian Evidence: Is That Spectral Line Real?",
-    "description": "Discover why a better best fit does not always mean stronger Bayesian evidence.",
-    "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4b_html.html",
-    "section": "Bayesian Model Comparison",
-    "group": "Statistics Fundamentals",
-    "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
+    "path": "Conjugate",
+    "title": "Priors and Data: What Matters, and When?",
+    "description": "Explore the role of priors and data, using exact Bayesian updates possible with Congugate prior-posterior pairs.",
+    "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3b_html.html#conjugate-priors",
+    "section": "Conjugate Priors and the Role of Data",
+    "group": "Bayesian Statistics & Posterior Inference",
+    "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css"]
   },
   {
     "path": "SelectionEffects",
@@ -15,6 +15,15 @@
     "lecture": "https://anguswright.github.io/LectureNotes/AstroStatistics_1.html",
     "section": "Detection Effects and Malmquist Bias",
     "group": "Astrostatistics",
+    "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
+  },
+  {
+    "path": "ModelEvidence",
+    "title": "Bayesian Evidence: Is That Spectral Line Real?",
+    "description": "Discover why a better best fit does not always mean stronger Bayesian evidence.",
+    "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4b_html.html",
+    "section": "Bayesian Model Comparison",
+    "group": "Statistics Fundamentals",
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
   },
   {
@@ -52,15 +61,6 @@
     "section": "Conditional Probability and Anomaly Detection",
     "group": "Statistics Fundamentals",
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
-  },
-  {
-    "path": "Conjugate",
-    "title": "Priors and Data: What Matters, and When?",
-    "description": "Explore the role of priors and data, using exact Bayesian updates possible with Congugate prior-posterior pairs.",
-    "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3b_html.html#conjugate-priors",
-    "section": "Conjugate Priors and the Role of Data",
-    "group": "Bayesian Statistics & Posterior Inference",
-    "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css"]
   },
   {
     "path": "Gibbs",

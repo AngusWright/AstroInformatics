@@ -5,7 +5,12 @@ const tools = require("../html-tools.json");
 
 process.env.HTML_SITE_ROOT = process.env.HTML_SITE_ROOT || "_site";
 runBrowser("", async b => {
-  const groups = [...new Set(tools.map(tool => tool.group))];
+  const groups = [
+    "Bayesian Statistics & Posterior Inference",
+    "Astrostatistics",
+    "Statistics Fundamentals",
+    "Further Foundations"
+  ];
   const orderedTools = groups.flatMap(group => tools.filter(tool => tool.group === group));
   const cards = await b.evaluate('[...document.querySelectorAll(".card h3 a")].map(link => [link.textContent, link.getAttribute("href")])');
   assert.deepEqual(cards, orderedTools.map(tool => [tool.title, `${tool.path}/`]));
