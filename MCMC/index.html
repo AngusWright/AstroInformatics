@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A browser-native Metropolis-Hastings sampler: four inference models, seeded chains, proposal animation and posterior diagnostics.">
+  <title>Metropolis-Hastings MCMC</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+  <style>
+    .progress-label { display:flex; justify-content:space-between; gap:12px; margin-top:16px; font-size:.84rem; }
+    progress { width:100%; height:7px; accent-color:#365b99; margin:8px 0 12px; }
+    .seek { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:12px 0; font-size:.82rem; }
+    .seek input { flex:1; min-width:90px; }
+    .step-description { min-height:3.2em; }
+    .checkbox { display:flex!important; align-items:center; gap:8px; }
+    .legend span::before { content:""; display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; background:currentColor; }
+    .diagnostic-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .diagnostic-header h2 { font-size:1.15rem; }
+    .skip-link { position:absolute; top:-80px; left:12px; padding:8px; background:white; z-index:2; }
+    .skip-link:focus { top:8px; }
+    pre { overflow:auto; padding:16px; border:1px solid #dce3ed; border-radius:8px; background:white; font-size:.82rem; }
+    footer { margin-top:28px; border-top:1px solid #dce3ed; padding:16px 0; font-size:.76rem; color:#596a80; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div>
+      <a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>Metropolis–Hastings MCMC</h1>
+      <p>Propose, compare, accept or stay. A good acceptance rate is not the same as good exploration.</p>
+    </div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3c_html.html">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open>
+        <summary>Model and sampler settings</summary>
+        <form id="controls" novalidate>
+          <label for="family">Data / likelihood family</label>
+          <select id="family">
+            <option value="gaussian">Gaussian (known covariance)</option>
+            <option value="binomial">Binomial (unknown p and N)</option>
+            <option value="beta">Beta (unknown shapes)</option>
+            <option value="gamma">Gamma (unknown shape and rate)</option>
+          </select>
+          <fieldset>
+            <legend>Simulated observations</legend>
+            <label for="observations">Number of observations</label>
+            <input id="observations" type="number" min="1" max="10000" step="1" value="10" required>
+            <label id="theta1-label" for="theta1">Generating mean x</label>
+            <input id="theta1" type="number" step="any" value="0" required>
+            <label id="theta2-label" for="theta2">Generating mean y</label>
+            <input id="theta2" type="number" step="any" value="0" required>
+            <div id="gaussian-settings">
+              <label for="data-sd">Known data SD</label>
+              <input id="data-sd" type="number" min="0.01" step="any" value="1.2" required>
+              <label for="rho">Known correlation <output for="rho"></output></label>
+              <input id="rho" type="range" min="-0.98" max="0.98" step="0.01" value="0.8">
+            </div>
+            <p class="hint">A seed fixes the data as well as the chains. Changing sampler settings keeps the same simulated observations.</p>
+          </fieldset>
+          <details class="advanced">
+            <summary>Prior ranges</summary>
+            <label for="prior">Independent prior within the ranges</label>
+            <select id="prior"><option value="uniform">Uniform</option><option value="gaussian">Bounded Gaussian</option></select>
+            <label id="lower1-label" for="lower1">Mean x: lower bound</label>
+            <input id="lower1" type="number" step="any" value="-3.5" required>
+            <label for="upper1">Upper bound</label>
+            <input id="upper1" type="number" step="any" value="3.5" required>
+            <label id="lower2-label" for="lower2">Mean y: lower bound</label>
+            <input id="lower2" type="number" step="any" value="-3.5" required>
+            <label for="upper2">Upper bound</label>
+            <input id="upper2" type="number" step="any" value="3.5" required>
+            <p class="hint">Gaussian priors are centred on each range midpoint, with SD = range width / 4, truncated to that range. N uses the corresponding discrete prior on integers. Zero is excluded for shapes and rates.</p>
+          </details>
+          <fieldset>
+            <legend>Sampler</legend>
+            <label for="proposal">Proposal mechanism</label>
+            <select id="proposal">
+              <option value="randomwalk">Gaussian random walk</option>
+              <option value="independence">Independent global proposal</option>
+              <option value="mixture">Local / global mixture</option>
+            </select>
+            <label for="proposal-sd">Local proposal SD <output for="proposal-sd"></output></label>
+            <input id="proposal-sd" type="range" min="0.01" max="2" step="0.01" value="0.2">
+            <div id="mixture-settings" hidden>
+              <label for="global-weight">Global proposal probability <output for="global-weight"></output></label>
+              <input id="global-weight" type="range" min="0.05" max="0.95" step="0.05" value="0.2">
+            </div>
+            <p id="proposal-hint" class="hint"></p>
+            <label for="iterations">Attempted iterations per chain</label>
+            <input id="iterations" type="number" min="1" max="10000" step="1" value="1000" required>
+            <label for="chains">Number of chains</label>
+            <input id="chains" type="number" min="1" max="8" step="1" value="4" required>
+            <label for="seed">Random seed</label>
+            <input id="seed" type="number" min="0" max="2147483647" step="1" value="666" required>
+            <p class="hint">Chains start at reproducible, dispersed valid points within the prior. All proposal parameters stay fixed: there is no adaptation.</p>
+          </fieldset>
+        </form>
+        <details class="advanced" open>
+          <summary>Diagnostics and display</summary>
+          <form id="display-controls" novalidate>
+            <label for="burn">Discard first iterations per chain</label>
+            <input id="burn" type="number" min="0" max="1000" step="1" value="100" required>
+            <label for="thin">Retain every kth subsequent state</label>
+            <input id="thin" type="number" min="1" max="10000" step="1" value="1" required>
+            <label for="focus-chain">Animate chain</label>
+            <select id="focus-chain"><option value="0">Chain 1</option></select>
+            <label for="delay">Time per attempted iteration</label>
+            <select id="delay"><option value="150">Fast · 0.15 s</option><option value="650" selected>0.65 s</option><option value="1300">Slow · 1.3 s</option></select>
+            <label for="trail">Recent attempts shown <output for="trail"></output></label>
+            <input id="trail" type="range" min="10" max="200" step="10" value="40">
+            <label class="checkbox"><input id="lines" type="checkbox" checked> Connect retained states</label>
+            <label class="checkbox"><input id="show-prior" type="checkbox" checked> Show prior boundary</label>
+            <p class="hint">These controls never resample. Rejected attempts count as iterations and repeated states remain in the diagnostics.</p>
+          </form>
+        </details>
+      </details>
+      <p class="local-note">Entirely local. No installation, runtime download or data upload. Open this page directly or use a static website.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>Proposals are not samples. Accept with the Hastings probability; otherwise record the previous state again. Small moves can be accepted often while exploring very slowly.</div>
+      <p id="error" class="error" role="alert" hidden></p>
+      <div class="tabs" role="tablist" aria-label="Demonstration views">
+        <button id="tab-explore" role="tab" aria-selected="true" aria-controls="explore" tabindex="0">Propose and decide</button>
+        <button id="tab-diagnostics" role="tab" aria-selected="false" aria-controls="diagnostics" tabindex="-1">Trace and inference</button>
+        <button id="tab-dependence" role="tab" aria-selected="false" aria-controls="dependence" tabindex="-1">Sample correlation</button>
+        <button id="tab-explain" role="tab" aria-selected="false" aria-controls="explain" tabindex="-1">How it works</button>
+      </div>
+      <section id="explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="transport" aria-label="Playback controls">
+          <button id="play" class="primary" type="button">Play</button>
+          <button id="step" type="button">Next iteration</button>
+          <button id="rewind" type="button">Rewind</button>
+          <button id="finish" type="button">Show all iterations</button>
+        </div>
+        <div class="seek"><label for="seek">Seek cached iteration</label><input id="seek" type="range" min="0" max="1000" step="1" value="0"></div>
+        <div class="progress-label"><strong id="progress-text"></strong><span id="playback-state">Paused</span></div>
+        <progress id="progress" max="1000" value="0" aria-label="Attempted iterations revealed"></progress>
+        <p id="step-description" class="step-description" aria-live="polite"></p>
+        <div class="plot-grid">
+          <article class="card">
+            <h2>Full joint posterior and chain history</h2>
+            <canvas id="joint-plot" role="img" aria-label="Joint posterior density, retained chain states, current proposal and decision."></canvas>
+            <div class="legend"><span style="color:#087f8c">Posterior density</span><span style="color:#008260">Accepted state</span><span style="color:#c75800">Attempted proposal</span><span style="color:#9e3f42">Rejected proposal</span><span style="color:#8992a1">Burn-in</span></div>
+            <p class="hint">Cross: proposed point. Open circle: previous state. Filled circle: retained state. Dashed orange path shows the attempted move, including a return on rejection. + marks the data-generating parameters, not the posterior mean. Dense clouds draw at most 1,500 states per chain; diagnostics use every retained state.</p>
+          </article>
+          <article class="card">
+            <h2>The acceptance decision</h2>
+            <canvas id="acceptance-plot" role="img" aria-label="Acceptance probability and the cached uniform random draw."></canvas>
+            <p id="decision-detail" class="hint"></p>
+          </article>
+        </div>
+        <div class="table-wrap"><table aria-label="Current attempted move"><thead><tr><th>Quantity</th><th>Value</th></tr></thead><tbody id="step-table"></tbody></table></div>
+        <p id="data-summary" class="notice"></p>
+      </section>
+      <section id="diagnostics" role="tabpanel" aria-labelledby="tab-diagnostics" hidden>
+        <div class="diagnostic-header"><h2>Has the chain explored the posterior?</h2><button id="diagnostic-finish" type="button">Show all iterations</button></div>
+        <p id="sample-count"></p>
+        <div class="diagnostic-grid">
+          <article class="card"><h3 id="trace-title-0">Trace: parameter 1</h3><canvas id="trace-0" class="small-canvas" role="img" aria-label="First parameter trace for every chain, including repeated states."></canvas></article>
+          <article class="card"><h3 id="trace-title-1">Trace: parameter 2</h3><canvas id="trace-1" class="small-canvas" role="img" aria-label="Second parameter trace for every chain, including repeated states."></canvas></article>
+          <article class="card"><h3 id="marginal-title-0">Marginal: parameter 1</h3><canvas id="marginal-0" class="small-canvas" role="img" aria-label="Retained sample histogram compared with the full posterior marginal."></canvas></article>
+          <article class="card"><h3 id="marginal-title-1">Marginal: parameter 2</h3><canvas id="marginal-1" class="small-canvas" role="img" aria-label="Retained sample histogram or discrete probabilities compared with the full posterior."></canvas></article>
+        </div>
+        <div class="table-wrap"><table aria-label="Sample and full posterior summaries"><thead><tr><th>Parameter</th><th>Sample mean</th><th>Sample SD</th><th>Target mean ≈</th><th>Target SD ≈</th><th>Split R̂</th><th>ACF ESS ≈</th></tr></thead><tbody id="sample-summary"></tbody></table></div>
+        <p class="hint">Teal curves / stems and target moments use deterministic numerical quadrature over the <strong>entire prior support</strong>, not a fitted Gaussian or the region visited by the chain. For N, the reference sums over every allowed integer. These are numerical approximations, not exact credible regions. Histograms pool retained states; chain traces stay separate.</p>
+        <p class="notice">Only iterations revealed by playback enter sample diagnostics. Burn-in discards the first B attempted transitions; the initial starting point is not a sample. Thinning retains iterations B + 1, B + 1 + k, … and does not create independent information.</p>
+      </section>
+      <section id="dependence" role="tabpanel" aria-labelledby="tab-dependence" hidden>
+        <h2>Dependence survives acceptance</h2>
+        <div class="diagnostic-grid">
+          <article class="card"><h3>Autocorrelation: parameter 1</h3><canvas id="acf-0" class="acf-canvas" role="img" aria-label="Within-chain autocorrelation of the retained first parameter."></canvas></article>
+          <article class="card"><h3>Autocorrelation: parameter 2</h3><canvas id="acf-1" class="acf-canvas" role="img" aria-label="Within-chain autocorrelation of the retained second parameter."></canvas></article>
+          <article class="card"><h3>Successive retained states: parameter 1</h3><canvas id="lag-0" class="small-canvas" role="img" aria-label="Adjacent retained states of the first parameter, without joining chains."></canvas></article>
+          <article class="card"><h3>Successive retained states: parameter 2</h3><canvas id="lag-1" class="small-canvas" role="img" aria-label="Adjacent retained states of the second parameter, without joining chains."></canvas></article>
+        </div>
+        <div class="table-wrap"><table aria-label="Per-chain acceptance"><thead><tr><th>Chain</th><th>Accepted / attempted</th><th>Acceptance rate</th><th>Retained states</th></tr></thead><tbody id="chain-summary"></tbody></table></div>
+        <p class="notice">ACFs are computed within each chain and averaged, never across concatenated chain boundaries. Constant chains have undefined ACF. Split R̂ needs at least two chains with four retained states each; a value near 1 is not proof of convergence. The simple ACF-based ESS truncates at 40 retained lags and can overstate information for slowly mixing chains.</p>
+      </section>
+      <section id="explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>A Metropolis–Hastings iteration</h2>
+        <ol>
+          <li>Start at x with finite positive posterior density π(x).</li>
+          <li>Propose y from q(y | x), even when it falls outside the target support.</li>
+          <li>Compute the acceptance probability using <strong>both</strong> proposal directions.</li>
+          <li>Draw U uniformly in (0, 1). Accept y if log U &lt; log α; otherwise keep x. Record one state either way.</li>
+        </ol>
+        <pre>log r = log π(y) − log π(x)
+      + log q(x | y) − log q(y | x)
+log α = min(0, log r)
+x[t+1] = y if log U &lt; log α, otherwise x[t]</pre>
+        <p>The unknown posterior normalising constant cancels. Log densities avoid underflow. An out-of-support proposal has log π(y) = −∞ and is rejected, not clipped, reflected or repeatedly redrawn.</p>
+        <h2>The selected model</h2>
+        <p id="model-equations"></p>
+        <h2>Proposal families</h2>
+        <ul>
+          <li><strong>Gaussian random walk:</strong> independent N(0, s²) increments in both coordinates. For the Binomial model, N instead moves by −1, 0 or +1 with equal probability. These proposals are symmetric; their ratio cancels, including at the support boundaries because invalid moves are rejected.</li>
+          <li><strong>Independent global:</strong> continuous coordinates are drawn from Gaussians centred at prior midpoints, with SD = range width / 3. N is drawn uniformly over all prior integers. The forward and reverse densities generally differ.</li>
+          <li><strong>Mixture:</strong> select the global proposal with probability w, otherwise the local random walk. The Hastings ratio uses the <em>full mixture density</em> in both directions, not only the selected component. This is a proposal mixture, not a mixture target.</li>
+        </ul>
+        <h2>Try these experiments</h2>
+        <ol>
+          <li>Compare tiny and large local proposal SDs. High acceptance can mean tiny, highly correlated moves; very large steps can leave long repeated-state plateaus.</li>
+          <li>For Gaussian data, increase correlation. A spherical proposal struggles along a narrow diagonal posterior even when every density evaluation is correct.</li>
+          <li>Use Binomial data. N must stay integer and at least the largest observed count; a boundary attempt is rejected rather than silently rounded back into support.</li>
+          <li>Compare chains, then adjust burn-in and thinning without changing the cached trajectories. Different starts can reveal lack of exploration that one smooth-looking trace hides.</li>
+          <li>Try a local/global proposal mixture. Better travel is possible, but global proposals are not accepted automatically; their proposal-density ratio matters.</li>
+        </ol>
+        <h2>Reproducibility and limits</h2>
+        <p><strong>Differences from the historical R app:</strong> its Gaussian-prior menu option was unimplemented and stopped with an error; here it means the explicitly bounded Gaussian prior described in the settings, not an unbounded normal prior. For non-Binomial models, R passed the control labelled “SD” as a covariance diagonal (variance). Here s consistently means proposal SD, so the covariance is s²I. The Binomial probability proposal already used SD in R and is unchanged.</p>
+        <p>Playback starts paused. All chains and all acceptance decisions are cached using a local seeded generator. Play, pause, next, rewind, seek and display changes reveal exactly the same run. Model or sampler changes regenerate the run. The data use a separate seeded stream, so changing proposal settings leaves observations unchanged. JavaScript and R random generators differ: equal seeds do not imply identical paths across languages.</p>
+        <p>The scale is fixed for the entire chain. Naively adapting proposals from the current sampling history can invalidate stationary-distribution arguments; any warm-up adaptation would need an explicit valid scheme and must not be mistaken for retained stationary sampling. No adaptation is performed here.</p>
+        <p>This demonstration infers two parameters from simulated observations; it is not an optimiser or a production convergence guarantee. The Gaussian data covariance is known. Gamma uses <strong>rate</strong>, not scale. Bounded priors define the target, so moving their bounds can legitimately change inference.</p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run this local sampler.</p></noscript>
+      <footer>Browser-native HTML, CSS and JavaScript. No Shiny, WebR, external fonts or runtime downloads.</footer>
+    </main>
+  </div>
+</body>
+</html>

@@ -17,7 +17,7 @@ verify_standalone <- function(payload) {
 for (i in seq_along(apps)) {
   app <- apps[[i]]
   directory <- file.path("docs", app$path)
-  stopifnot(all(file.exists(file.path(directory, c("index.html", "app.json", "edit/index.html")))))
+  stopifnot(file.exists(file.path(directory, "index.html")))
   link <- paste0('href="', app$path, '/"')
   positions[i] <- regexpr(link, gallery, fixed = TRUE)[1]
   stopifnot(positions[i] > 0,
@@ -25,6 +25,22 @@ for (i in seq_along(apps)) {
             grepl(paste0("](", app$path, "/)"), overview, fixed = TRUE))
   page <- paste(readLines(file.path(directory, "index.html")), collapse = "\n")
   stopifnot(grepl(paste0("<title>", htmltools::htmlEscape(app$title), "</title>"), page, fixed = TRUE))
+  if (!is.null(app$static_files)) {
+    asset_tags <- regmatches(page, gregexpr('(?:src|href)="[^"]+\\.(?:js|css)"', page, perl = TRUE))[[1]]
+    references <- sub('^[^=]+="([^"]+)"$', "\\1", asset_tags)
+    stopifnot(grepl(app$lecture, page, fixed = TRUE),
+              !grepl("<script[^>]+(shinylive|webr)|app[.]json|https?://[^\" ]+[.](js|css)", page, ignore.case = TRUE),
+              length(references) > 0, all(references %in% app$static_files),
+              all(file.exists(file.path(directory, references))),
+              !any(file.exists(file.path(directory, c("app.json", "edit/index.html")))))
+    for (asset in app$static_files) {
+      expected <- readBin(file.path(app$path, asset), "raw", n = file.info(file.path(app$path, asset))$size)
+      actual <- readBin(file.path(directory, asset), "raw", n = file.info(file.path(directory, asset))$size)
+      stopifnot(identical(actual, expected))
+    }
+    next
+  }
+  stopifnot(file.exists(file.path(directory, "app.json")), file.exists(file.path(directory, "edit/index.html")))
   payload <- jsonlite::fromJSON(file.path(directory, "app.json"))
   stopifnot(all(c("name", "content", "type") %in% names(payload)),
             "app.R" %in% payload$name,

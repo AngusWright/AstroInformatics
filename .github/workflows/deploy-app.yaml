@@ -21,6 +21,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Test browser-native inference tools
+        run: |
+          node --test TeachingTools/test_statistics.js Conjugate/test_conjugate.js Gibbs/test_gibbs.js MCMC/test_mcmc.js ShiftFitting/test_shift.js
+          node Conjugate/test_browser.js
+          node Gibbs/test_browser.js
+          node MCMC/test_browser.js
+          node ShiftFitting/test_browser.js
+
       - uses: rstudio/shiny-workflows/setup-r-package@v1
         with:
           packages: |

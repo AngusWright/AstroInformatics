@@ -1,0 +1,92 @@
+Shift Fitting under Heteroskedasticity
+====================================
+
+Open index.html directly, or serve this repository as static files. Keep
+../TeachingTools/statistics.js, browser.js and browser.css at their relative
+paths. No build, packages, remote assets, Shiny server or network is required.
+app.R is unchanged and retained as the historical reference.
+
+Lecture:
+https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4b_html.html
+Gallery: ../
+
+The experiment
+--------------
+Truth is y=x or the unit-normal density. Each observation has independent
+additive Gaussian noise with known SD: constant (arithmetic mean of the two SD
+endpoints), linear in SD, or log-linear in SD across an evenly spaced x grid.
+Logarithmic sample/repetition controls are rounded to the nearest integer.
+The same local seed reproduces the same observations. Data controls are staged:
+click Generate data to apply them. Every fixed model uses the same realisations;
+fit and display controls never resimulate data.
+
+Fit y=m*x+b with fixed slope m, or A*N(x;mu,s) with fixed width s.
+Report shifts b or mu, respectively (both true zero), and Gaussian amplitudes.
+Every realisation is fitted. The data panel shows the selected realisation and
+its SD bars, fitted curves and up to 100 deterministic ensemble curves per model.
+The other panels show normalised shift histograms and shift versus width/slope.
+
+Translation decisions and mathematical repairs
+----------------------------------------------
+* The R objective divides squared residuals by SD, not variance. This legacy
+  weighting remains the default and is labelled. Equal weights and the correct
+  known-noise Gaussian likelihood weights 1/SD^2 are explicit alternatives.
+* The original "correction" is preserved as an optional two-pass heuristic:
+  regress absolute residuals on fitted response, multiply base weights by
+  inverse squared predicted residual size, and refit. It does NOT estimate the
+  known noise model reliably, particularly for a symmetric Gaussian response.
+  Nonpositive predicted scales are rejected, never clipped. Its R linear call
+  used a nonexistent width argument; the translation correctly holds slope fixed.
+* Gaussian amplitude is profiled analytically (unrestricted, as in R). A grid
+  resolves centroid peaks and local golden-section searches refine them. The
+  centroid is explicitly restricted to the sampled x interval, rather than one
+  unconstrained local optim() start. Boundary and singular uncertainties are
+  unavailable. This is a finite numerical search, not a proof of global optimality.
+* Data are paired across models, unlike the independent draws in each R loop.
+  This supports meaningful fixed-data comparisons and avoids resimulation on
+  figure/annotation changes. Up to 100 curves are drawn without R's failure when
+  sampling 100 curves from fewer than 100 realisations. All simulation results
+  enter summaries and plots except the explicitly labelled ensemble-curve cap.
+* Linear intercept propagation is exact for fixed weights:
+      Var(b) = sum(w_i^2 * sigma_i^2) / sum(w_i)^2.
+  Nonlinear propagation uses H^-1 B H^-1 with B=J'W diag(sigma^2) WJ and the
+  full objective Hessian H=J'WJ-sum(w_i*r_i*second_derivative(f_i)).
+  Dropping the residual-curvature term would be wrong under misspecification.
+  These Gaussian intervals are local approximations, not guaranteed 95% coverage.
+  Width/slope uncertainty is never included: these are controlled fixed values.
+* Conditional SD uses the generating noise, even under legacy/equal fit weights.
+  It does not pretend those weights describe the true likelihood. No analytic
+  SD/coverage is claimed for the data-dependent residual heuristic. Its reference
+  remains the noiseless BASE-weight optimum (noiseless residuals are not a noise
+  sample). The known truth has no estimation uncertainty.
+* Mean shift, Monte Carlo SE of that mean, empirical shift SD, noiseless shift
+  and hypothetical noise propagation around the noiseless reference are separate.
+  Coverage reports both true zero and the noiseless reference, with the actual
+  interval denominator; unavailable/boundary intervals are excluded and counted.
+  There is no empirical SD or Monte Carlo SE from only one realisation.
+* Bias–Width bands use paired realisation-specific regression trends, not
+  ordinary regression treating model cells as independent. Inner bands are
+  +/-1.96 MC SE of the mean trend, outer bands +/-1.96 SD of realisation trends.
+  These are descriptive normal approximations, not exact confidence/prediction
+  intervals. No trend bands for one realisation or identical model parameters.
+* R's unimplemented Poissonian/Gamma entries remain explicitly unavailable;
+  no new count-response model is silently substituted. There was no animation.
+  Axes adapt to finite results rather than clipping observations to R's hard
+  y limits. Annotation scaling adjusts plot headings and legends.
+
+Validation
+----------
+From the repository root, using Node 22 or later:
+  node --test ShiftFitting/test_shift.js
+  node ShiftFitting/test_browser.js
+
+The browser suite uses ../TeachingTools/browser_test.js and its local Chrome
+harness; it adds no npm dependency. It checks all display/noise/weight branches,
+linear and Gaussian fits, residual correction, fixed-data comparisons, invalid
+inputs, one-realisation behaviour, mobile DPR/layout and direct file opening.
+Optional screenshots are controlled by HTML_SCREENSHOT_DIR in that harness.
+
+Explicit finite-work limits prevent accidental browser lockups: at most
+1,000,000 stored observations and an estimated 60,000,000 fit work units.
+Large combinations fail with a visible message; they never silently downsample.
+Gaussian fits need at least three x samples; linear fits need at least two.

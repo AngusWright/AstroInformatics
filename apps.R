@@ -4,9 +4,9 @@ intro_notes <- function(section) {
 astro_notes <- function(section) {
   paste0("https://anguswright.github.io/LectureNotes/AstroStatistics_", section, ".html")
 }
-app_entry <- function(path, title, description, lecture, section, group, shared = TRUE) {
+app_entry <- function(path, title, description, lecture, section, group, shared = TRUE, static_files = NULL) {
   list(path = path, title = title, description = description, lecture = lecture,
-       section = section, group = group, shared = shared)
+       section = section, group = group, shared = shared, static_files = static_files)
 }
 
 apps <- list(
@@ -37,17 +37,25 @@ apps <- list(
   app_entry("Conjugate", "Conjugate Priors and the Role of Data",
             "Explore exact Bayesian updates and the relative information in a prior and a dataset.",
             paste0(intro_notes("3b"), "#conjugate-priors"), "Conjugate Priors and the Role of Data",
-            "Existing inference tools", shared = FALSE),
+            "Existing inference tools", shared = FALSE,
+            static_files = c("index.html", "model.js", "app.js", "../TeachingTools/statistics.js",
+                             "../TeachingTools/browser.js", "../TeachingTools/browser.css")),
   app_entry("Gibbs", "Gibbs Sampling: One Conditional at a Time",
             "Animate exact conditional draws, coordinate moves, and the formation of a joint sample.",
             paste0(intro_notes("3c"), "#building-an-mcmc-sampler-the-gibbs-sampler"), "The Gibbs Sampler",
-            "Existing inference tools", shared = FALSE),
+            "Existing inference tools", shared = FALSE,
+            static_files = c("index.html", "styles.css", "gibbs.js", "app.js",
+                             "../TeachingTools/statistics.js")),
   app_entry("MCMC", "Metropolis-Hastings MCMC",
             "Investigate proposal scale, acceptance, and the efficiency of posterior exploration.",
-            intro_notes("3c"), "The Metropolis-Hastings Algorithm", "Existing inference tools", shared = FALSE),
+            intro_notes("3c"), "The Metropolis-Hastings Algorithm", "Existing inference tools", shared = FALSE,
+            static_files = c("index.html", "model.js", "app.js", "../TeachingTools/statistics.js",
+                             "../TeachingTools/browser.js", "../TeachingTools/browser.css")),
   app_entry("ShiftFitting", "Shift Fitting under Heteroskedasticity",
             "Compare inference under constant and varying measurement uncertainty.",
-            intro_notes("4b"), "Fitting a Model", "Existing inference tools", shared = FALSE),
+            intro_notes("4b"), "Fitting a Model", "Existing inference tools", shared = FALSE,
+            static_files = c("index.html", "model.js", "app.js", "../TeachingTools/statistics.js",
+                             "../TeachingTools/browser.js", "../TeachingTools/browser.css")),
   app_entry("ForwardModelling", "Uncertain Encounters, Many Possible Galaxies",
             "A statistical companion to the Holmberg prototype: propagate uncertain encounter parameters into tidal predictions.",
             intro_notes("2d"), "Simulation and Monte Carlo Simulations", "Simulation companion"),

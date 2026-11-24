@@ -4,6 +4,20 @@ escape <- function(text) as.character(htmltools::htmlEscape(text))
 
 export_lesson <- function(app) {
   directory <- app$path
+  if (!is.null(app$static_files)) {
+    destination <- file.path(output_dir, app$path)
+    dir.create(destination, recursive = TRUE, showWarnings = FALSE)
+    message("Copying static page ", app$path)
+    for (asset in app$static_files) {
+      target <- file.path(destination, asset)
+      dir.create(dirname(target), recursive = TRUE, showWarnings = FALSE)
+      stopifnot(file.copy(file.path(directory, asset), target, overwrite = TRUE))
+    }
+    stale <- file.path(destination, c("app.json", "edit/index.html"))
+    unlink(stale)
+    stopifnot(!any(file.exists(stale)))
+    return(invisible(NULL))
+  }
   if (app$shared) {
     staging <- tempfile(paste0("astro-", app$path, "-"))
     dir.create(staging)

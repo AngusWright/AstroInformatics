@@ -1,28 +1,151 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Shift Fitting under Heteroskedasticity</title>
-    <script
-      src="./../shinylive/load-shinylive-sw.js"
-      type="module"
-    ></script>
-    <script type="module">
-      import { runExportedApp } from "./../shinylive/shinylive.js";
-      runExportedApp({
-        id: "root",
-        appEngine: "r",
-        relPath: "../",
-      });
-    </script>
-    <link rel="stylesheet" href="./../shinylive/style-resets.css" />
-    <link rel="stylesheet" href="./../shinylive/shinylive.css" />
-
-  </head>
-  <body>
-
-    <div style="height: 100vh; width: 100vw" id="root"></div>
-
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore centroid and intercept bias when fixed model widths or slopes meet unequal observational uncertainties.">
+  <title>Shift Fitting under Heteroskedasticity</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+  <style>
+    .checkbox { display:flex; gap:.5rem; align-items:center; }
+    .checkbox input { width:auto; }
+    .paired { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+    .paired > div { min-width:0; }
+    .legend-item { display:inline-flex; align-items:center; gap:.35rem; margin:.2rem .7rem .2rem 0; }
+    .swatch { display:inline-block; width:1.1rem; height:.22rem; }
+    .metric-grid { margin:1rem 0; }
+    #fit-plot { height:430px; }
+    .table-wrap { max-width:100%; overflow-x:auto; }
+    .table-wrap th { white-space:normal; min-width:6rem; }
+    .explanation { margin-top:1rem; }
+    @media(max-width:800px) { #fit-plot { height:330px; } .paired { gap:.4rem; } }
+  </style>
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>Shift Fitting under Heteroskedasticity</h1>
+      <p>A wrong width can move a peak. Unequal uncertainties decide which data pull hardest.</p>
+    </div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4b_html.html">Read the lecture →</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open>
+        <summary>Experiment and fitting settings</summary>
+        <form id="controls" novalidate>
+          <fieldset>
+            <legend>1 · Generate an experiment</legend>
+            <label for="model_type">Model type / truth</label>
+            <select id="model_type">
+              <option value="gaussian">Gaussian · unit-area N(0, 1)</option>
+              <option value="linear">Linear · y = x</option>
+              <option value="poissonian" disabled>Poissonian · not implemented in R</option>
+              <option value="gamma" disabled>Gamma · not implemented in R</option>
+            </select>
+            <label for="noise_model">Noise SD across x</label>
+            <select id="noise_model">
+              <option value="constant">Constant · arithmetic mean of endpoints</option>
+              <option value="linear">Linear in SD</option>
+              <option value="log-linear" selected>Log-linear in SD</option>
+            </select>
+            <div class="paired">
+              <div><label for="noise_min">Min log10 SD</label><input id="noise_min" type="number" min="-3" max="1" step=".01" value="-2" required></div>
+              <div><label for="noise_max">Max log10 SD</label><input id="noise_max" type="number" min="-3" max="1" step=".01" value="-1" required></div>
+            </div>
+            <label for="n_noise">Noise realisations · log10 <output for="n_noise"></output></label>
+            <input id="n_noise" type="range" min="0" max="4" step=".01" value="2">
+            <p id="repeats-label" class="hint"></p>
+            <label for="num_samples">x samples · log10 <output for="num_samples"></output></label>
+            <input id="num_samples" type="range" min="0" max="4" step=".1" value="2">
+            <p id="samples-label" class="hint"></p>
+            <div class="paired">
+              <div><label for="sample_min">x minimum</label><input id="sample_min" type="number" min="-10" max="10" step=".1" value="-4" required></div>
+              <div><label for="sample_max">x maximum</label><input id="sample_max" type="number" min="-10" max="10" step=".1" value="4" required></div>
+            </div>
+            <label for="seed">Data seed</label>
+            <input id="seed" type="number" min="0" max="2147483647" step="1" value="666" required>
+            <button id="generate" class="primary" type="button">Generate data</button>
+            <p id="pending" class="hint" aria-live="polite">Data settings apply only when you generate.</p>
+          </fieldset>
+          <fieldset>
+            <legend>2 · Fit the same observations</legend>
+            <div class="paired">
+              <div><label for="model_min">Min width / slope</label><input id="model_min" type="number" min=".1" max="1.9" step=".01" value=".9" required></div>
+              <div><label for="model_max">Max width / slope</label><input id="model_max" type="number" min=".1" max="1.9" step=".01" value="1.1" required></div>
+            </div>
+            <label for="nmodels">Number of models <output for="nmodels"></output></label>
+            <input id="nmodels" type="range" min="2" max="8" step="1" value="3">
+            <label for="weighting">Observation weights in Σ wᵢ residualᵢ²</label>
+            <select id="weighting">
+              <option value="legacy">1 / SD · original R reference</option>
+              <option value="equal">Equal · ignore heteroskedasticity</option>
+              <option value="known">1 / SD² · known Gaussian noise</option>
+            </select>
+            <label class="checkbox"><input id="correct_htrsk" type="checkbox"> Residual-based “correction” (R heuristic)</label>
+            <p class="hint">The statistically correct known-noise fit uses 1/SD². The optional residual heuristic is not equivalent and has no calibrated analytic uncertainty.</p>
+          </fieldset>
+          <fieldset>
+            <legend>3 · Inspect without resimulating</legend>
+            <label for="plot_type">Figure type</label>
+            <select id="plot_type">
+              <option value="data_model">Data &amp; Model</option>
+              <option value="bias">Model Bias</option>
+              <option value="correlation">Bias–Width / Slope</option>
+            </select>
+            <label for="realisation">Shown noise realisation <output for="realisation"></output></label>
+            <input id="realisation" type="range" min="1" max="100" step="1" value="1">
+            <label for="annot_cex">Annotation scaling <output for="annot_cex"></output></label>
+            <input id="annot_cex" type="range" min=".5" max="2.5" step=".1" value="1.5">
+          </fieldset>
+        </form>
+      </details>
+      <p class="local-note">Browser-only, seeded calculations. Works offline after downloading this folder together with TeachingTools.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong> The observation model matters. A fixed wrong width or slope can turn unequal errors into a systematic centroid or intercept shift.</div>
+      <p id="error" class="error" role="alert" hidden></p>
+      <div class="metric-grid">
+        <div class="metric"><span>Generated experiment</span><strong id="data-summary"></strong></div>
+        <div class="metric"><span>Truth / shift parameter</span><strong id="truth-summary"></strong></div>
+        <div class="metric"><span>Fit assumptions</span><strong id="weight-summary"></strong></div>
+      </div>
+      <article class="card">
+        <h2 id="plot-title">Data &amp; Model</h2>
+        <canvas id="fit-plot" role="img" aria-label="Observed data, true model and fits for each fixed model width or slope. Numerical summaries follow below."></canvas>
+        <div id="legend" class="legend"></div>
+        <p id="plot-note" class="hint"></p>
+      </article>
+      <p id="status" class="hint" aria-live="polite"></p>
+      <div class="table-wrap">
+        <table aria-label="Shift fitting results">
+          <thead><tr><th>Fixed width / slope</th><th>Selected shift ± conditional SD</th><th>Selected amplitude ± SD</th><th>Mean shift ± MC SE</th><th>Empirical shift SD</th><th>Noiseless shift ± local SD</th><th>95% cover truth / reference</th></tr></thead>
+          <tbody id="fit-table"></tbody>
+        </table>
+      </div>
+      <p id="interval-note" class="notice"></p>
+      <details class="explanation">
+        <summary>What is fitted? What does uncertainty mean?</summary>
+        <h3>The experiment</h3>
+        <p>Truth is y = x or the unit-normal density N(x; 0, 1). Observations are truth plus independent Normal(0, σᵢ²) noise, on an evenly spaced x grid. The noise SD is constant, linear, or log-linear across x. This is additive Gaussian noise even when fitting a Gaussian-shaped curve; these observations are not Gaussian-distributed x samples.</p>
+        <p>Each fixed slope m fits y = m x + b; the shift is b (true b = 0). Each fixed width s fits y = A N(x; μ, s); the shift is μ (true μ = 0), with unrestricted amplitude A (true A = 1). Widths and slopes are deliberately fixed, not estimated.</p>
+        <h3>Weighting is part of the inference</h3>
+        <p>The R reference minimizes Σ residual²/σ, not the known-noise Gaussian likelihood Σ residual²/σ². Both are available, alongside equal weights. “Correction” preserves its extra step: regress absolute residuals on the fitted response, then multiply the base weights by inverse squared predicted residual size. This is a data-dependent heuristic, not recovery of known σ(x). Negative or zero predicted scales are rejected explicitly.</p>
+        <h3>Bias, spread and reference</h3>
+        <p>The mean shift estimates bias relative to the true zero shift. MC SE describes uncertainty of that simulation mean; it is not the uncertainty of one fit. Empirical SD describes scatter between noise realisations. The noiseless reference is the optimum for the true curve under the chosen fixed width/slope and base weights; it can differ from zero under misspecification. Its SD is hypothetical noise propagation around that reference, not uncertainty in the known truth.</p>
+        <p>Conditional SD uses the actual generating σᵢ, not an estimated residual variance. It is exact for a linear intercept with fixed weights. For Gaussian centroids and amplitudes it is a local sensitivity approximation using the full residual-curvature Hessian, conditional on the fixed width. It need not give 95% coverage at high noise or with wrong widths. Boundary/singular fits have no symmetric interval; coverage lists only fits with an interval and reports the denominator. The heuristic has no analytic intervals, and its noiseless reference remains the base-weight reference.</p>
+        <p>Precisely, Var(b) = Σwᵢ²σᵢ² / (Σwᵢ)². For Gaussian parameters, the local covariance is H⁻¹BH⁻¹, where J is the fitted-response Jacobian, W = diag(wᵢ), B = JᵀW diag(σᵢ²) WJ, and H = JᵀWJ − Σwᵢrᵢ∇²fᵢ includes residual curvature. Displayed SDs are square roots of covariance diagonals. Coverage is the fraction of available intervals shift ± 1.959964 SD containing zero or the noiseless reference, respectively. MC SE = empirical SD / √(number of realisations).</p>
+        <h3>Deliberate translation decisions</h3>
+        <p>Data are shared across fitted models and held fixed when fit/display controls change: paired comparisons remove the R plot's accidental resimulation. Gaussian centroids are searched across the displayed x interval, with exact amplitude profiling and explicit boundary warnings, rather than trusting one unconstrained local start. A peak outside the sampled interval cannot be reliably identified here.</p>
+        <p>The Bias–Width view shows a descriptive line through group means. Bands propagate paired whole-realisation trends: ±1.96 MC SE for the mean and ±1.96 SD for realisation-to-realisation spread. They are normal approximations, not the independent-observation regression confidence/prediction intervals of the R reference, and the relationship need not be linear. Poissonian and Gamma were selectable labels in R, but selecting either stopped with “not yet implemented”; no corresponding truth, fit or noise likelihood existed. They remain explicitly disabled here. The R linear correction's incorrect “width” argument is fixed to slope.</p>
+        <p>Other display/control differences from R: common-bin histograms replace rectangular-kernel density curves; axes auto-range instead of clipping to fixed y limits; up to 100 ensemble curves are selected deterministically, avoiding the R sampling failure below 100 realisations. Logarithmic counts are rounded explicitly, underidentified fits and excessive workloads are rejected rather than silently altered, and annotation scaling affects headings and legends. Data settings apply with Generate data; fit settings refit existing observations, and figure, realisation and annotation settings only redraw.</p>
+      </details>
+    </main>
+  </div>
+</body>
 </html>

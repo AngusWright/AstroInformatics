@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An interactive, browser-native Gibbs sampler: exact conditional draws, Gaussian mixtures, animation, and convergence diagnostics.">
+  <title>Gibbs Sampling: One Conditional at a Time</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="gibbs.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div>
+      <a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>Gibbs sampling</h1>
+      <p>One conditional at a time. A joint distribution emerges from simple, one-coordinate draws.</p>
+    </div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3c_html.html#building-an-mcmc-sampler-the-gibbs-sampler">Read the lecture &rarr;</a>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open>
+        <summary>Target and chain settings</summary>
+        <form id="controls" novalidate>
+          <label for="family">Likelihood / target family</label>
+          <select id="family">
+            <option value="gaussian">Multivariate Gaussian (2D)</option>
+            <option value="student">Multivariate Student-t (2D)</option>
+            <option value="mixture">Two-population Gaussian mixture</option>
+            <option value="poisson">Poisson with Gamma hierarchy</option>
+          </select>
+
+          <fieldset data-families="gaussian student mixture">
+            <legend>Location and shape</legend>
+            <label for="location1">Location y1 <output for="location1"></output></label>
+            <input id="location1" type="range" min="-3" max="3" step="0.1" value="0">
+            <label for="location2">Location y2 <output for="location2"></output></label>
+            <input id="location2" type="range" min="-3" max="3" step="0.1" value="0">
+            <label for="scale1">Scale 1 <output for="scale1"></output></label>
+            <input id="scale1" type="range" min="0.25" max="3" step="0.05" value="1">
+            <label for="scale2">Scale 2 <output for="scale2"></output></label>
+            <input id="scale2" type="range" min="0.25" max="3" step="0.05" value="1">
+            <label for="rho">Correlation rho <output for="rho"></output></label>
+            <input id="rho" type="range" min="-0.98" max="0.98" step="0.01" value="0.8">
+            <p class="hint">Scales are Gaussian SDs or Student-t scales. For a mixture, locations set the midpoint; scales and rho describe each population.</p>
+          </fieldset>
+          <fieldset data-families="student" hidden>
+            <legend>Heavy tails</legend>
+            <label for="df">Degrees of freedom <output for="df"></output></label>
+            <input id="df" type="range" min="3" max="30" step="1" value="5">
+          </fieldset>
+          <fieldset data-families="mixture" hidden>
+            <legend>Two populations</legend>
+            <label for="separation">Separation <output for="separation"></output></label>
+            <input id="separation" type="range" min="0" max="8" step="0.25" value="4">
+            <p class="hint">Distance between centres, in within-population scale units along each coordinate.</p>
+            <label for="weight">Population 1 probability <output for="weight"></output></label>
+            <input id="weight" type="range" min="0.05" max="0.95" step="0.05" value="0.5">
+            <p class="hint">Population 1 has the lower centre. The other probability is 1 &minus; w.</p>
+          </fieldset>
+          <fieldset data-families="poisson" hidden>
+            <legend>Counts and Gamma priors</legend>
+            <label for="n">Unit-exposure observations <output for="n"></output></label>
+            <input id="n" type="range" min="1" max="100" step="1" value="10">
+            <label for="total">Observed total count <output for="total"></output></label>
+            <input id="total" type="range" min="0" max="200" step="1" value="30">
+            <label for="a">Lambda prior shape a <output for="a"></output></label>
+            <input id="a" type="range" min="1" max="10" step="0.5" value="2">
+            <label for="hyper_shape">Beta prior shape c <output for="hyper_shape"></output></label>
+            <input id="hyper_shape" type="range" min="1" max="10" step="0.5" value="2">
+            <label for="hyper_rate">Beta prior rate d <output for="hyper_rate"></output></label>
+            <input id="hyper_rate" type="range" min="0.1" max="5" step="0.1" value="1">
+          </fieldset>
+
+          <details class="advanced">
+            <summary>Chain settings</summary>
+            <label for="sweeps">Complete sweeps <output for="sweeps"></output></label>
+            <input id="sweeps" type="range" min="10" max="2000" step="10" value="100">
+            <label for="seed">Random seed</label>
+            <input id="seed" type="number" min="0" max="2147483647" step="1" value="666" required>
+            <fieldset data-families="gaussian student mixture">
+              <legend>Starting state</legend>
+              <label for="start1">Starting theta1</label>
+              <input id="start1" type="number" step="any" value="-2.5" required>
+              <label for="start2">Starting theta2</label>
+              <input id="start2" type="number" step="any" value="2.5" required>
+            </fieldset>
+            <fieldset data-families="poisson" hidden>
+              <legend>Positive starting state</legend>
+              <label for="start_lambda">Starting lambda</label>
+              <input id="start_lambda" type="number" min="0.000001" step="any" value="1" required>
+              <label for="start_beta">Starting beta</label>
+              <input id="start_beta" type="number" min="0.000001" step="any" value="1" required>
+            </fieldset>
+            <p class="hint">Changing a target or chain setting creates a new chain and rewinds playback. The same seed reproduces the same trajectory.</p>
+          </details>
+        </form>
+
+        <details class="advanced">
+          <summary>Playback and display</summary>
+          <label for="delay">Time per coordinate update</label>
+          <select id="delay">
+            <option value="100">Fast &middot; 0.1 seconds</option>
+            <option value="250">0.25 seconds</option>
+            <option value="500" selected>0.5 seconds</option>
+            <option value="1000">Slow &middot; 1 second</option>
+          </select>
+          <label for="trail">Recent coordinate moves <output for="trail"></output></label>
+          <input id="trail" type="range" min="10" max="200" step="10" value="40">
+          <label for="burn">Discard initial sweeps <output for="burn"></output></label>
+          <input id="burn" type="range" min="0" max="99" step="1" value="10">
+          <label class="checkbox"><input id="show_samples" type="checkbox" checked> Show completed-sweep samples</label>
+          <p class="hint">Display settings never resample the chain. Burn-in removes early sweeps, not dependence.</p>
+        </details>
+      </details>
+      <p class="local-note">Runs entirely in your browser. No installation, server computation or data upload.</p>
+    </aside>
+
+    <main id="main">
+      <div class="principle"><strong>The principle</strong> Draw one parameter from its full conditional, holding the others fixed. Use its new value immediately in the next update.</div>
+      <p id="error" class="error" role="alert" hidden></p>
+      <div class="tabs" role="tablist" aria-label="Demonstration views">
+        <button id="tab-explore" role="tab" aria-selected="true" aria-controls="explore" tabindex="0">Animated updates</button>
+        <button id="tab-diagnostics" role="tab" aria-selected="false" aria-controls="diagnostics" tabindex="-1">Trace and marginals</button>
+        <button id="tab-explain" role="tab" aria-selected="false" aria-controls="explain" tabindex="-1">How Gibbs works</button>
+      </div>
+
+      <section id="explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="transport" aria-label="Playback controls">
+          <button id="play" class="primary" type="button">Play</button>
+          <button id="step" type="button">Next coordinate</button>
+          <button id="sweep" type="button">Finish / next sweep</button>
+          <button id="rewind" type="button">Rewind</button>
+          <button id="finish" type="button">Show all iterations</button>
+          <div class="jump"><label for="jump_to">Jump to update</label><input id="jump_to" type="number" min="0" max="200" step="1" value="0"><button id="jump" type="button">Jump</button></div>
+        </div>
+        <div class="progress-label"><strong id="progress-text"></strong><span id="playback-state">Paused</span></div>
+        <progress id="progress" max="200" value="0" aria-label="Coordinate updates completed"></progress>
+        <p id="step-description" class="step-description" aria-live="polite"></p>
+        <p id="mixture-warning" class="notice" hidden><strong>Watch for mode trapping.</strong> Exact conditional draws can still leave the chain in one population. Extra burn-in does not guarantee visits to the other.</p>
+        <div class="plot-grid">
+          <article class="card">
+            <h2 id="target-title">Joint posterior</h2>
+            <canvas id="joint-plot" class="joint-canvas" role="img" aria-label="Joint posterior contours and Gibbs trajectory. The current state is also given in the table below."></canvas>
+            <div class="legend"><span class="orange">Horizontal: update 1</span><span class="blue">Vertical: update 2</span><span class="green">Retained sweeps</span><span>Grey: burn-in</span></div>
+          </article>
+          <article class="card">
+            <h2 id="conditional-title">Full conditional</h2>
+            <canvas id="conditional-plot" class="conditional-canvas" role="img" aria-label="Full conditional density, with the previous coordinate and the new draw marked."></canvas>
+            <p id="conditional-description" class="hint"></p>
+            <p class="hint">This is a distribution with the other coordinate fixed, <strong>not</strong> a marginal.</p>
+          </article>
+        </div>
+        <div class="table-wrap"><table aria-label="Current coordinate update">
+          <thead><tr><th>Parameter</th><th>Before</th><th>After</th><th>Status</th></tr></thead>
+          <tbody id="step-table"></tbody>
+        </table></div>
+        <p class="hint">Contours show relative joint density, not credible regions. Open circle: previous state. Filled circle: current state. Cross: initial state. Plot windows are finite.</p>
+      </section>
+
+      <section id="diagnostics" role="tabpanel" aria-labelledby="tab-diagnostics" hidden>
+        <div class="diagnostic-header"><h2>Has the chain explored the target?</h2><button id="diagnostic-finish" type="button">Show all iterations</button></div>
+        <p id="sample-count"></p>
+        <div class="diagnostic-grid">
+          <article class="card"><h3>Trace: parameter 1</h3><canvas id="trace-0" class="small-canvas" role="img" aria-label="First coordinate trace across completed sweeps."></canvas></article>
+          <article class="card"><h3>Trace: parameter 2</h3><canvas id="trace-1" class="small-canvas" role="img" aria-label="Second coordinate trace across completed sweeps."></canvas></article>
+          <article class="card"><h3>Marginal: parameter 1</h3><canvas id="marginal-0" class="small-canvas" role="img" aria-label="First retained-sample histogram and exact target marginal, where available."></canvas></article>
+          <article class="card"><h3>Marginal: parameter 2</h3><canvas id="marginal-1" class="small-canvas" role="img" aria-label="Second retained-sample histogram and exact target marginal, where available."></canvas></article>
+        </div>
+        <p class="hint">Curves are exact Gaussian, Student-t or mixture marginals; dashed trace lines mark the target mean and burn-in. Mixture overlays show both populations even if the chain visits only one. The Poisson hierarchy has no analytic marginal overlay here.</p>
+        <div class="table-wrap"><table aria-label="Retained sample and target summary">
+          <thead><tr><th>Parameter</th><th>Sample mean</th><th>Sample SD</th><th>Target mean</th><th>Target SD</th></tr></thead>
+          <tbody id="sample-summary"></tbody>
+        </table></div>
+        <div class="diagnostic-grid">
+          <article class="card"><h3>Autocorrelation: parameter 1</h3><canvas id="acf-0" class="acf-canvas" role="img" aria-label="First coordinate autocorrelation."></canvas></article>
+          <article class="card"><h3>Autocorrelation: parameter 2</h3><canvas id="acf-1" class="acf-canvas" role="img" aria-label="Second coordinate autocorrelation."></canvas></article>
+        </div>
+        <p class="notice">Only complete sweeps already revealed by playback enter these summaries. Burn-in does not remove autocorrelation, and a smooth trace within one population is not proof of convergence.</p>
+      </section>
+
+      <section id="explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>A systematic-scan Gibbs sweep</h2>
+        <ol>
+          <li>Choose an initial state within the target support.</li>
+          <li>Draw theta1 from p(theta1 | current theta2, data): a horizontal move.</li>
+          <li>Draw theta2 from p(theta2 | <strong>new</strong> theta1, data): a vertical move.</li>
+          <li>Record this completed pair and repeat.</li>
+        </ol>
+        <pre>theta1[t+1] ~ p(theta1 | theta2[t], data)
+theta2[t+1] ~ p(theta2 | theta1[t+1], data)</pre>
+        <p>Each exact conditional update preserves the joint target. Under suitable irreducibility and convergence conditions, repeated sweeps approach it. These are random draws, not optimisation steps: lower-density moves are allowed and there is no Metropolis accept/reject step. In more dimensions, update every coordinate using the most recently available values.</p>
+        <h2>The selected model</h2>
+        <div id="model-equations"></div>
+        <h2>Try these experiments</h2>
+        <ol>
+          <li>Step through the first sweep. The second update conditions on the first update's <em>new</em> value.</li>
+          <li>Compare rho = 0 with rho = 0.98. Narrow conditionals can mean slow travel along an elongated posterior.</li>
+          <li>For the mixture, use rho = 0 and compare separation 2 with separation 6. Start near either population, then compare different seeds. Unequal weights change the overall mean, not the midpoint.</li>
+          <li>For Student-t, move far from the centre: its conditional widens. The conditional has nu + 1 degrees of freedom, not nu.</li>
+          <li>For the Poisson hierarchy, change the observed total. Both sampled parameters stay positive.</li>
+        </ol>
+        <h2>Reproducibility and limits</h2>
+        <p>A seeded, local pseudorandom generator fixes the complete trajectory. Playback only reveals it; pausing, replaying and changing display settings do not resample. Playback starts paused. JavaScript and R use different random generators, so equal seeds do not give identical paths across implementations.</p>
+        <p>This is a controlled teaching example, not a fit to a real survey. Finite, correlated samples need not match the target. A Gaussian mixture's parameters are specified here, not inferred; this is not a latent-class parameter-fitting tool.</p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run the sampler. No plugins or server computation are needed.</p></noscript>
+      <footer>Browser-native HTML, CSS and JavaScript. No Shiny, WebR, external fonts or runtime downloads.</footer>
+    </main>
+  </div>
+</body>
+</html>

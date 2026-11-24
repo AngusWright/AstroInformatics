@@ -1,6 +1,91 @@
-Shiny App showing behaviour of MH MCMC sampler 
+Metropolis-Hastings MCMC — standalone browser demonstration
+=========================================================
 
-- different models 
-- different priors 
-- impact of thinning, burn-in, multiple starts 
+Open index.html directly, or serve this repository with any static web server.
+Keep MCMC/ beside TeachingTools/: the shared CSS, Canvas helpers and numerical
+utilities are local relative assets. No Shiny, WebR, packages, fonts, CDNs or
+runtime downloads are needed. app.R remains the unchanged historical reference.
 
+Models and priors
+-----------------
+Infer two parameters from reproducible simulated observations:
+- Gaussian means, with known common data SD and correlation.
+- Binomial probability p and integer draw count N.
+- Beta shapes alpha and beta.
+- Gamma shape and rate (not scale).
+
+Uniform priors cover the specified independent ranges. The reference app's
+unimplemented Gaussian-prior option is now explicitly a bounded Gaussian:
+mean = range midpoint, SD = width / 4, truncated to the range. On N this is a
+normalised discrete distribution over the allowed integers. Prior endpoints
+must increase; positive shapes/rates exclude zero; singular Gaussian
+correlations and incompatible Binomial ranges produce visible errors.
+
+Sampling and playback
+---------------------
+The default preserves the reference's Gaussian random walk, with a symmetric
+{-1, 0, +1} integer increment for Binomial N. Proposal SD consistently means SD
+(the R continuous proposal passed its labelled SD as a covariance).
+
+Optional independent global proposals and local/global mixtures demonstrate
+the Hastings correction. Continuous global proposals have midpoint means and
+SD = prior width / 3; global N is uniform on the allowed integers. Mixtures use
+the total forward/reverse mixture densities, not just the chosen component.
+Proposals outside target support are rejected without clipping or redrawing.
+Every attempt records a state, including repeated states after rejection.
+There is no adaptation; the page explains why uncontrolled adaptation is not
+equivalent to stationary Metropolis-Hastings.
+
+One to eight seeded chains start at dispersed, valid points. Data and sampler
+use separate seeded streams; sampler-only changes leave observations fixed.
+The same settings reproduce all data, starts, proposals and acceptance draws.
+JavaScript and R generators are different, so paths are not identical to R.
+
+Playback starts paused. Next iteration, Play/Pause, Rewind, Show all iterations
+and Seek reveal the cached chain, without resampling. The focused chain shows
+the attempted proposal, uniform acceptance draw, and the accepted move or
+rejection/return. Model and sampler changes regenerate and rewind. Burn-in,
+thinning, focused chain, timing, trails, points/lines and prior-boundary display
+do not regenerate.
+
+Diagnostics
+-----------
+Discarding B means removing the first B attempted transitions, never counting
+the initial point as a retained sample. Thinning keeps B+1, B+1+k, ... . Only
+iterations revealed by playback enter diagnostics.
+
+Trace plots, retained histograms (probability bars for N), sample moments,
+within-chain ACFs and lag plots preserve repeated states. Full-target reference
+marginals and moments use nonuniform midpoint quadrature over the complete
+prior box, and an exact finite sum over allowed N values. The quadrature is an
+approximation, not a Gaussian fitted to the samples; finite-grid accuracy can
+deteriorate for extremely concentrated/boundary targets. Target density shading
+is relative density, not a credible region. Dense joint clouds draw at most
+1,500 states per chain for responsiveness; summaries use every retained state.
+
+ACFs are averaged within chains, never across concatenated chain boundaries.
+Split R-hat requires at least two chains with four retained states each and
+is undefined without within-chain variation. Approximate ACF ESS uses positive
+lag pairs through at most lag 40 and can be optimistic with slow mixing. No
+diagnostic or high acceptance rate proves convergence; thinning does not create
+information and burn-in does not remove dependence.
+
+Files and validation
+--------------------
+- index.html: accessible native controls, responsive page and teaching text.
+- model.js: pure numerical kernel; browser MCMCModel and CommonJS exports.
+- app.js: cached playback, validation and Canvas 2D views.
+- test_mcmc.js: node:test algorithm, support, quadrature and stationary checks.
+- test_browser.js: shared Chrome harness; playback, settings, plots, errors,
+  keyboard tabs, responsive/DPR rendering, file:// and local-only assets.
+
+Run with Node 22 or newer:
+  node --test MCMC/test_mcmc.js
+  node MCMC/test_browser.js
+
+The browser test needs Chrome (CHROME_BIN may override its path). Its owned
+Chrome profile stays inside MCMC/.browser-test/ and is cleaned up afterwards.
+
+Lecture:
+https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3c_html.html
+All demonstrations: ../

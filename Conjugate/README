@@ -2,21 +2,38 @@ Conjugate Priors and the Role of Data
 
 An exact, interactive Bayesian updating explorer for Normal-Normal (known
 variance), Beta-Binomial, Gamma-Poisson, and Gamma-Gamma (known shape) models.
-Gamma parameters use the shape-rate convention.
+Gamma parameters use the shape-rate convention. The page runs entirely in
+HTML/CSS/JavaScript with no Shiny, WebR, CDN, or runtime installation.
 
 The controls specify sufficient statistics rather than simulated observations,
 so changing the prior does not resample the data. Compare prior, normalised
 likelihood, and posterior densities, posterior means and credible intervals,
 and the influence of a fixed prior as sample size increases.
 
-Run locally from the repository root:
-  Rscript -e 'shiny::runApp("Conjugate")'
+Open Conjugate/index.html directly, or serve the repository with any static
+web server. Keep TeachingTools/ beside the tool folders when copying them:
+statistics.js supplies shared probability functions and browser.js/browser.css
+supply Canvas drawing and responsive styling. No build step is needed.
 
-Run focused numerical and Shiny reactive checks:
+Run numerical and actual-browser checks (Node 22+, Chrome for browser tests):
+  node --test TeachingTools/test_statistics.js Conjugate/test_conjugate.js
+  node Conjugate/test_browser.js
+
+The numerical checks include Bayes-product identities, sequential/batch
+equivalence, boundary counts, fixed-data behavior and R-calibrated quantiles.
+Browser tests cover all pairs, no-data states, prior/data presets, diagnostics,
+keyboard tabs, mobile layout and offline file use. CHROME_BIN can select Chrome.
+
+The original app.R and conjugate.R remain an R/Shiny reference, not part of
+the served page. Their existing regression checks are retained:
   Rscript Conjugate/test_conjugate.R
 
 Export all apps for GitHub Pages:
   Rscript deploy.R
+
+The catalogue copies the explicit local/shared static asset manifest rather
+than exporting an R payload. Obsolete app.json/editor pages are retired only
+for the converted tools; the other lecture tools keep their existing exporter.
 
 Teaching reference:
 https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3b_html.html#conjugate-priors

@@ -1,12 +1,24 @@
 Gibbs Sampling: One Conditional at a Time
 
-An interactive Shiny / Shinylive demonstration of systematic-scan Gibbs
-sampling. The multivariate Gaussian and Student-t examples use a single
+An interactive, standalone HTML/CSS/JavaScript demonstration of systematic-scan
+Gibbs sampling. No Shiny, WebR, installation, CDN, or runtime download is needed.
+Open index.html directly, or serve this directory with any static web server.
+The multivariate Gaussian and Student-t examples use a single
 two-dimensional observation, known scale matrix, and a flat location prior.
 A Poisson likelihood with a Gamma-Gamma hierarchy demonstrates positive,
 non-Gaussian posterior parameters. Every update uses an exact full conditional.
-The numerical kernels and target definitions are separate from the interface
-in gibbs.R so additional model families can implement the same interface.
+The two-population Gaussian mixture adds adjustable separation and population
+weight, with shared within-population scales and correlation. Its full
+conditionals are Gaussian mixtures whose weights are recomputed from the held
+coordinate, not fixed at the global population weights. The mixture parameters
+are specified, not inferred; this is not a latent-class parameter-fitting model.
+The numerical kernels and target definitions are separate from the interface:
+gibbs.js implements seeded sampling and distributions; app.js handles Canvas
+plots, controls, animation, and diagnostics. Additional families can implement
+the same target/conditional interface. styles.css supplies responsive styling.
+The numerical primitives now live in ../TeachingTools/statistics.js, shared
+with the other browser-native inference tools. Keep TeachingTools/ beside
+Gibbs/ when copying the source for offline use.
 
 Play or pause individual coordinate updates, step a coordinate or sweep,
 jump to an update, rewind, or display the complete chain. The joint trajectory
@@ -20,14 +32,35 @@ resample it. Changing a model or sampling setting generates a new chain and
 rewinds playback. Student-t scales are not standard deviations; Gamma
 parameters use rates rather than scales.
 
-Run locally from the repository root:
-  Rscript -e 'shiny::runApp("Gibbs")'
+Compare overlapping and separated mixture populations to see mode trapping:
+exact Gibbs updates need not explore both populations within the displayed run.
+The mixture marginal overlays include both populations even when the chain
+visits only one. Compare different starts and seeds; burn-in alone does not
+solve poor mixing.
 
-Run numerical, stationary-distribution, and timed-playback regression tests:
-  Rscript Gibbs/test_gibbs.R
+Run JavaScript numerical and stationary-distribution tests (Node 22 or later):
+  node --test Gibbs/test_gibbs.js
+
+Run actual browser interaction, playback, plotting, responsive-layout, and
+standalone-file tests (Chrome required; CHROME_BIN can select its executable):
+  node Gibbs/test_browser.js
+
+The browser runner uses Node built-ins only, a temporary isolated Chrome
+profile, and a loopback-only static server. It closes both when finished.
+Tests also check that the page requests no external or Shiny/WebR assets.
 
 Export all apps for GitHub Pages:
   Rscript deploy.R
+
+The catalogue's explicit static_files manifest copies only index.html,
+styles.css, gibbs.js, and app.js into docs/Gibbs, and preserves the shared
+statistics.js path under docs/TeachingTools. No R payload or editor page is
+deployed for Gibbs. Unconverted tools retain their existing exporters.
+
+The previous app.R and gibbs.R are retained as an R/Shiny numerical reference,
+not loaded by the HTML tool or copied into its Pages directory. Their existing
+regressions can still be run with Rscript Gibbs/test_gibbs.R. JavaScript and R
+use different pseudorandom generators; matching seeds do not match paths.
 
 Teaching reference:
 https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3c_html.html#building-an-mcmc-sampler-the-gibbs-sampler

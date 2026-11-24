@@ -1,28 +1,149 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Conjugate Priors and the Role of Data</title>
-    <script
-      src="./../shinylive/load-shinylive-sw.js"
-      type="module"
-    ></script>
-    <script type="module">
-      import { runExportedApp } from "./../shinylive/shinylive.js";
-      runExportedApp({
-        id: "root",
-        appEngine: "r",
-        relPath: "../",
-      });
-    </script>
-    <link rel="stylesheet" href="./../shinylive/style-resets.css" />
-    <link rel="stylesheet" href="./../shinylive/shinylive.css" />
-
-  </head>
-  <body>
-
-    <div style="height: 100vh; width: 100vw" id="root"></div>
-
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Exact Bayesian updates: explore conjugate priors, prior strength and the role of data without simulation or runtime downloads.">
+  <title>Conjugate Priors and the Role of Data</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Interactive statistics</a>
+      <h1>Conjugate priors</h1>
+      <p>Watch prior knowledge and data combine into an exact posterior.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section3b_html.html#conjugate-priors">Read the lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Prior and data settings</summary>
+        <form id="controls" novalidate>
+          <label for="model">Likelihood / conjugate prior</label>
+          <select id="model">
+            <option value="normal">Normal / Normal (known variance)</option>
+            <option value="binomial">Binomial / Beta</option>
+            <option value="poisson">Poisson / Gamma</option>
+            <option value="gamma">Gamma / Gamma (known shape)</option>
+          </select>
+          <label class="checkbox"><input id="no_data" type="checkbox"> Start with no data</label>
+          <label for="log_n">Sample size exponent <output for="log_n"></output></label>
+          <input id="log_n" type="range" min="0" max="4" step="0.1" value="1">
+          <p class="hint">n = round(10<sup>x</sup>); current n is shown above the plot.</p>
+          <fieldset data-models="normal">
+            <legend>Normal observations</legend>
+            <label for="sample_mean">Observed sample mean <output for="sample_mean"></output></label>
+            <input id="sample_mean" type="range" min="-5" max="5" step="0.1" value="1">
+            <label for="sigma">Known observation SD <output for="sigma"></output></label>
+            <input id="sigma" type="range" min="0.1" max="5" step="0.1" value="2">
+            <label for="prior_mean">Prior mean b <output for="prior_mean"></output></label>
+            <input id="prior_mean" type="range" min="-5" max="5" step="0.1" value="-1">
+            <label for="prior_sd">Prior SD s0 <output for="prior_sd"></output></label>
+            <input id="prior_sd" type="range" min="0.05" max="10" step="0.05" value="1">
+          </fieldset>
+          <fieldset data-models="binomial" hidden>
+            <legend>Binomial observations</legend>
+            <label for="success_fraction">Observed success fraction <output for="success_fraction"></output></label>
+            <input id="success_fraction" type="range" min="0" max="1" step="0.01" value="0.7">
+            <label for="beta_a">Prior shape alpha <output for="beta_a"></output></label>
+            <input id="beta_a" type="range" min="0.5" max="50" step="0.5" value="2">
+            <label for="beta_b">Prior shape beta <output for="beta_b"></output></label>
+            <input id="beta_b" type="range" min="0.5" max="50" step="0.5" value="5">
+          </fieldset>
+          <fieldset data-models="poisson" hidden>
+            <legend>Poisson observations</legend>
+            <label for="count_mean">Observed counts per observation <output for="count_mean"></output></label>
+            <input id="count_mean" type="range" min="0" max="10" step="0.1" value="4">
+          </fieldset>
+          <fieldset data-models="gamma" hidden>
+            <legend>Gamma observations</legend>
+            <label for="gamma_mean">Observed sample mean <output for="gamma_mean"></output></label>
+            <input id="gamma_mean" type="range" min="0.1" max="10" step="0.1" value="2">
+            <label for="shape">Known observation shape k <output for="shape"></output></label>
+            <input id="shape" type="range" min="0.5" max="10" step="0.5" value="3">
+          </fieldset>
+          <fieldset data-models="poisson gamma" hidden>
+            <legend>Gamma prior (rate, not scale)</legend>
+            <label for="gamma_a">Prior shape alpha <output for="gamma_a"></output></label>
+            <input id="gamma_a" type="range" min="0.5" max="50" step="0.5" value="3">
+            <label for="gamma_b">Prior rate beta <output for="gamma_b"></output></label>
+            <input id="gamma_b" type="range" min="0.1" max="20" step="0.1" value="2">
+          </fieldset>
+        </form>
+        <p class="hint">These are observed sufficient statistics, not a resimulated dataset. Changing a prior never changes the data. Integer counts use nearest-integer, ties-to-even rounding.</p>
+        <details class="advanced" open><summary>Gaussian experiments</summary>
+          <div class="transport"><button id="strong_prior" type="button">Prior dominates</button>
+            <button id="many_data" type="button">Data dominates</button>
+            <button id="weak_prior" type="button">Weak prior</button>
+            <button id="reset" type="button">Reset</button></div>
+        </details>
+      </details>
+      <p class="local-note">Exact analytic updates, entirely in your browser. No installation, simulation or data upload.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>Posterior &prop; prior &times; likelihood. Conjugacy preserves the distribution family, not its parameters.</div>
+      <p id="error" class="error" role="alert" hidden></p>
+      <div class="tabs" role="tablist" aria-label="Demonstration views">
+        <button id="tab-update" role="tab" aria-selected="true" aria-controls="update" tabindex="0">Conjugate update</button>
+        <button id="tab-role" role="tab" aria-selected="false" aria-controls="role" tabindex="-1">The role of data</button>
+        <button id="tab-explain" role="tab" aria-selected="false" aria-controls="explain" tabindex="-1">What to try</button>
+      </div>
+      <div class="metric-grid" aria-live="polite">
+        <div class="metric">Observations<strong id="sample-size"></strong></div>
+        <div class="metric">Prior mean weight<strong id="prior-weight"></strong></div>
+        <div class="metric">Posterior mean<strong id="posterior-mean"></strong></div>
+        <div class="metric">Posterior SD<strong id="posterior-sd"></strong></div>
+      </div>
+      <section id="update" role="tabpanel" aria-labelledby="tab-update">
+        <p id="model-description"></p>
+        <p id="data-description" class="notice"></p>
+        <article class="card">
+          <h2>Knowledge before and after the data</h2>
+          <canvas id="density-plot" role="img" aria-label="Prior, area-normalised likelihood and posterior densities. Numerical summaries follow."></canvas>
+          <div class="legend"><span class="blue">Prior</span><span id="likelihood-legend">Dashed: likelihood (unit area)</span><span class="orange">Posterior</span></div>
+        </article>
+        <p class="hint">The likelihood is scaled to unit area over the parameter for comparison. It is not a probability distribution for the parameter without a suitable prior. Curves use central 99.8% quantile windows; divergent boundary densities are not evaluated at endpoints.</p>
+        <div class="table-wrap"><table aria-label="Prior and posterior summaries"><thead><tr><th>Distribution</th><th>Family / parameters</th><th>Mean</th><th>SD</th><th>Central 95% credible interval</th></tr></thead><tbody id="summary"></tbody></table></div>
+        <p id="information"></p>
+        <label for="prior-share">Weight of the prior mean</label>
+        <progress id="prior-share" max="1" value="0" aria-label="Prior mean weight"></progress>
+        <p id="weight-description" class="hint"></p>
+        <details class="advanced"><summary>Exact update equation</summary><pre id="update-rule"></pre><p class="hint">Normal formulas use variances; Gamma formulas use rates, not scales.</p></details>
+      </section>
+      <section id="role" role="tabpanel" aria-labelledby="tab-role" hidden>
+        <h2>What happens as data accumulate?</h2>
+        <p>Hold the prior, known observation noise or shape, and observed per-observation summary fixed. Increase n from 1 to 10,000. Integer totals are rounded. This is a controlled comparison, not a newly simulated sequence.</p>
+        <div class="plot-grid">
+          <article class="card"><h3>Posterior mean and uncertainty</h3><canvas id="role-plot" role="img" aria-label="Posterior mean and central 95 percent credible band as sample size increases."></canvas><div class="legend"><span class="orange">Posterior / 95% band</span><span class="blue">Dashed: prior mean</span><span>Dotted: data estimate</span></div></article>
+          <article class="card"><h3>Relative prior influence</h3><canvas id="weight-plot" role="img" aria-label="Exact coefficient of the prior mean as sample size increases."></canvas></article>
+        </div>
+        <p class="hint">The x-axes are logarithmic. The vertical line marks the selected nonzero n. The band is a credible interval for the unknown parameter, not a prediction interval for a future observation.</p>
+        <p id="role-explanation" class="notice"></p>
+      </section>
+      <section id="explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Prior knowledge versus data</h2>
+        <ol>
+          <li><strong>Prior dominates:</strong> a small prior SD means high prior precision. With few observations, the posterior stays near the prior even when data disagree.</li>
+          <li><strong>Data dominates:</strong> more informative observations reduce the influence of a fixed prior and concentrate the posterior.</li>
+          <li><strong>Weak prior:</strong> a broad Normal prior has little precision. Its posterior approaches Normal(sample mean, sigma<sup>2</sup>/n).</li>
+          <li>Select <strong>Start with no data</strong>: posterior equals prior. There is no data estimate or likelihood curve.</li>
+          <li>Compare all four pairs. Counts, exposure, or the sum of measurements update the prior analytically; no MCMC is needed.</li>
+        </ol>
+        <h2>Sufficiency: different data, identical update</h2>
+        <p>For Normal observations with known variance, n and the sample mean contain all data information about the unknown mean. These datasets have different sample spreads but the same posterior under the currently selected Normal prior and known observation SD.</p>
+        <div class="table-wrap"><table aria-label="Sufficient-statistic comparison"><thead><tr><th>Dataset</th><th>n</th><th>Sample mean</th><th>Posterior mean</th><th>Posterior SD</th></tr></thead><tbody id="sufficiency"></tbody></table></div>
+        <h2>What this does not imply</h2>
+        <p>Exact addition of prior and data precisions, and monotonically decreasing posterior variance, apply to the known-variance Normal model. They are not universal properties of every conjugate family.</p>
+        <p>The mean weight is an exact algebraic coefficient, not a probability that the prior is correct or a universal fraction of information. All selectable priors are proper. An infinitely broad Normal prior is an improper flat-prior limit, not a proper uniform distribution over the real line.</p>
+        <p>Data dominate a fixed prior in these examples when sufficiently informative. Convergence to a true parameter also requires an appropriate sampling model and prior support near the truth. Data cannot rescue regions excluded by a prior. Conjugacy is a computational convenience, not a reason to misrepresent prior knowledge.</p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run the explorer. No plugins or server computation are needed.</p></noscript>
+      <footer>Browser-native HTML, CSS and JavaScript. No Shiny, WebR, external fonts or data upload.</footer>
+    </main>
+  </div>
+</body>
 </html>

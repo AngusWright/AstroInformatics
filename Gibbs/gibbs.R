@@ -7,6 +7,50 @@ gibbs_normal <- function(location, scale) {
   )
 }
 
+gibbs_normal_mixture <- function(location, scale, weight) {
+  if (weight == 0) return(gibbs_normal(location[2], scale))
+  if (weight == 1 || location[1] == location[2]) return(gibbs_normal(location[1], scale))
+  first <- which.min(location)
+  first_weight <- if (first == 1L) weight else 1 - weight
+  cdf <- function(x) {
+    weight * pnorm(x, location[1], scale) + (1 - weight) * pnorm(x, location[2], scale)
+  }
+  list(
+    label = sprintf("Mixture: %.4g x Normal(%.4g, SD %.4g) + %.4g x Normal(%.4g, SD %.4g)",
+                    weight, location[1], scale, 1 - weight, location[2], scale),
+    draw = function() rnorm(1, location[sample.int(2, 1, prob = c(weight, 1 - weight))], scale),
+    density = function(x) {
+      weight * dnorm(x, location[1], scale) + (1 - weight) * dnorm(x, location[2], scale)
+    },
+    quantile = function(p) {
+      result <- qnorm(p, location[1], scale)
+      interior <- which(p > 0 & p < 1)
+      if (!length(interior)) return(result)
+      other <- qnorm(p[interior], location[2], scale)
+      lower <- pmin(result[interior], other)
+      upper <- pmax(result[interior], other)
+      boundary <- p[interior] == first_weight
+      # Component quantiles bracket the mixture quantile; bisect all probabilities together.
+      for (iteration in seq_len(50)) {
+        middle <- lower + (upper - lower) / 2
+        below <- cdf(middle) < p[interior]
+        if (any(boundary)) {
+          # Avoid a rounded-flat CDF in the gap between well-separated populations.
+          left <- log(first_weight) +
+            pnorm(middle[boundary], location[first], scale, lower.tail = FALSE, log.p = TRUE)
+          right <- log1p(-first_weight) +
+            pnorm(middle[boundary], location[3L - first], scale, log.p = TRUE)
+          below[boundary] <- left > right
+        }
+        lower[below] <- middle[below]
+        upper[!below] <- middle[!below]
+      }
+      result[interior] <- lower + (upper - lower) / 2
+      result
+    }
+  )
+}
+
 gibbs_student <- function(location, scale, df) {
   list(
     label = sprintf("Student-t(df = %.4g, location = %.4g, scale = %.4g)", df, location, scale),
@@ -27,12 +71,48 @@ gibbs_gamma <- function(shape, rate) {
 
 gibbs_target <- function(family = "gaussian", location = c(0, 0), scale = c(1, 1),
                          rho = 0.8, df = 5, n = 10, total = 30,
-                         a = 2, c = 2, d = 1) {
-  stopifnot(length(family) == 1, family %in% c("gaussian", "student", "poisson"))
-  if (family %in% c("gaussian", "student")) {
+                         a = 2, c = 2, d = 1, separation = 4, weight = 0.5) {
+  stopifnot(length(family) == 1, family %in% c("gaussian", "student", "poisson", "mixture"))
+  if (family %in% c("gaussian", "student", "mixture")) {
     stopifnot(length(location) == 2, all(is.finite(location)),
               length(scale) == 2, all(is.finite(scale)), all(scale > 0),
               length(rho) == 1, is.finite(rho), abs(rho) < 1)
+    if (family == "mixture") {
+      stopifnot(length(separation) == 1, is.finite(separation), separation >= 0,
+                length(weight) == 1, is.finite(weight), weight > 0, weight < 1)
+      centres <- rbind(location - separation * scale / 2, location + separation * scale / 2)
+      components <- lapply(1:2, function(k) {
+        gibbs_target("gaussian", location = centres[k, ], scale = scale, rho = rho)
+      })
+      return(list(
+        family = family, label = "Two-population Gaussian mixture",
+        axes = components[[1]]$axes, positive = FALSE,
+        conditional = function(state, coordinate) {
+          other <- 3L - coordinate
+          # Condition the population odds on the held coordinate, not on both coordinates.
+          probability <- if (separation == 0) weight else {
+            plogis(qlogis(weight) - separation * ((state[other] - location[other]) / scale[other]))
+          }
+          means <- vapply(components, function(component) {
+            component$conditional(state, coordinate)$quantile(0.5)
+          }, numeric(1))
+          gibbs_normal_mixture(means, scale[coordinate] * sqrt(1 - rho^2), probability)
+        },
+        log_density = function(x, y) {
+          left <- log(weight) + components[[1]]$log_density(x, y)
+          right <- log1p(-weight) + components[[2]]$log_density(x, y)
+          peak <- pmax(left, right)
+          ifelse(peak == -Inf, -Inf, peak + log(exp(left - peak) + exp(right - peak)))
+        },
+        marginal = function(x, coordinate) {
+          weight * components[[1]]$marginal(x, coordinate) +
+            (1 - weight) * components[[2]]$marginal(x, coordinate)
+        },
+        limits = lapply(1:2, function(j) range(components[[1]]$limits[[j]], components[[2]]$limits[[j]])),
+        mean = location + (1 - 2 * weight) * separation * scale / 2,
+        sd = scale * sqrt(1 + weight * (1 - weight) * separation^2)
+      ))
+    }
     if (family == "student") stopifnot(length(df) == 1, is.finite(df), df > 2)
     conditional <- function(state, coordinate) {
       other <- 3L - coordinate

@@ -13,21 +13,30 @@ ui <- page_sidebar(
     accordion(
       accordion_panel(
         "Likelihood and target",
-        selectInput("family", "Likelihood family",
+        selectInput("family", "Likelihood / target family",
                     c("Multivariate Gaussian (2D)" = "gaussian",
                       "Multivariate Student-t (2D)" = "student",
+                      "Two-population Gaussian mixture (2D)" = "mixture",
                       "Poisson with Gamma hierarchy" = "poisson")),
         conditionalPanel(
           "input.family != 'poisson'",
-          sliderInput("location1", "Observation y1 (posterior location 1)",
+          sliderInput("location1", "Location y1 (midpoint for mixture)",
                       -3, 3, 0, step = 0.1),
-          sliderInput("location2", "Observation y2 (posterior location 2)",
+          sliderInput("location2", "Location y2 (midpoint for mixture)",
                       -3, 3, 0, step = 0.1),
           sliderInput("scale1", "Scale 1 (Gaussian SD; Student-t scale)",
                       0.25, 3, 1, step = 0.05),
           sliderInput("scale2", "Scale 2 (Gaussian SD; Student-t scale)",
                       0.25, 3, 1, step = 0.05),
-          sliderInput("rho", "Correlation rho", -0.98, 0.98, 0.8, step = 0.01)
+          sliderInput("rho", "Correlation rho (within each population)", -0.98, 0.98, 0.8, step = 0.01)
+        ),
+        conditionalPanel(
+          "input.family == 'mixture'",
+          sliderInput("separation", "Population separation (scale units per coordinate)",
+                      0, 8, 4, step = 0.25),
+          sliderInput("weight", "Probability in population 1 (lower centre)",
+                      0.05, 0.95, 0.5, step = 0.05),
+          helpText("The centres sit equally far below and above the midpoint. Scales and rho describe each population, not the combined distribution.")
         ),
         conditionalPanel(
           "input.family == 'student'",
@@ -76,6 +85,13 @@ ui <- page_sidebar(
   ),
   p("Gibbs sampling builds a joint sample by drawing one parameter from its full conditional, ",
     "holding the others fixed. Here two coordinate updates make one complete sweep."),
+  conditionalPanel(
+    "input.family == 'mixture'",
+    p(strong("Watch for mode trapping: "),
+      "exact conditional draws can still leave a chain exploring only one population. ",
+      "Compare overlapping and well-separated populations, then inspect both target marginals. ",
+      "Extra burn-in does not guarantee visits to the other population.")
+  ),
   tabsetPanel(
     tabPanel(
       "Animated updates",
@@ -110,7 +126,7 @@ ui <- page_sidebar(
       uiOutput("sample_count"),
       plotOutput("diagnostic_plot", height = "650px"),
       tableOutput("sample_summary"),
-      p("Solid marginal curves are the exact Gaussian or Student-t posterior marginals. ",
+      p("Solid marginal curves are the exact Gaussian, Student-t, or Gaussian-mixture marginals. ",
         "For the Poisson hierarchy, histograms are shown without an analytic marginal overlay. ",
         "Finite, correlated samples need not match the target closely."),
       plotOutput("acf_plot", height = "310px"),
@@ -144,6 +160,10 @@ ui <- page_sidebar(
                 "so the chain moves slowly along the long axis of the posterior. Try negative correlation too."),
         tags$li("Select Student-t. Moving far from the centre widens its full conditional, unlike the Gaussian. ",
                 "The conditional has nu + 1 degrees of freedom, not nu."),
+        tags$li("Select the Gaussian mixture. Compare separation 2 with separation 6, using rho = 0 and equal weights. ",
+                "Start near either population and compare runs. The conditional population weights depend on the held coordinate, ",
+                "and large separation can prevent visible transitions even though every draw is exact. ",
+                "A smooth trace within one population is not evidence that the whole mixture has been explored."),
         tags$li("Select the Poisson hierarchy. Both coordinates must remain positive, and each draw is Gamma. ",
                 "Changing the count data changes the posterior, not just its visual appearance."),
         tags$li("Use 'Show all iterations' to examine traces and marginals. Change the starting point and seed ",
@@ -163,7 +183,8 @@ server <- function(input, output, session) {
     gibbs_target(input$family, location = c(input$location1, input$location2),
                  scale = c(input$scale1, input$scale2), rho = input$rho, df = input$df,
                  n = input$n, total = input$total, a = input$a,
-                 c = input$hyper_shape, d = input$hyper_rate)
+                 c = input$hyper_shape, d = input$hyper_rate,
+                 separation = input$separation, weight = input$weight)
   })
   chain <- reactive({
     model <- target()
@@ -351,11 +372,12 @@ server <- function(input, output, session) {
     }
     for (j in 1:2) {
       histogram <- hist(samples[, j], breaks = "FD", plot = FALSE)
-      x <- seq(min(histogram$breaks), max(histogram$breaks), length.out = 400)
+      limits <- range(histogram$breaks, if (model$family == "mixture") model$limits[[j]])
+      x <- seq(limits[1], limits[2], length.out = 400)
       reference <- if (!is.null(model$marginal)) model$marginal(x, j) else 0
       plot(histogram, freq = FALSE, col = "#DDDDDD", border = "white",
            xlab = model$axes[j], main = paste("Retained:", model$axes[j]),
-           ylim = c(0, max(histogram$density, reference)))
+           xlim = limits, ylim = c(0, max(histogram$density, reference)))
       if (!is.null(model$marginal)) lines(x, reference, col = colours[j], lwd = 2)
     }
   }, res = 110, alt = "Trace plots and retained-sample marginal histograms for both parameters.")
@@ -380,6 +402,18 @@ server <- function(input, output, session) {
   }, res = 110, alt = "Autocorrelation of each coordinate across retained complete sweeps.")
 
   output$model_equations <- renderUI({
+    if (input$family == "mixture") {
+      return(tagList(
+        p("A specified mixture target in the same two parameter coordinates, with known population weights, centres and shared covariance S. ",
+          "This demonstrates a multimodal posterior, not inference of unknown mixture parameters or persistent latent class labels."),
+        tags$pre("mu_minus = y - separation*(s1,s2)/2\nmu_plus  = y + separation*(s1,s2)/2\nS = [[s1^2, rho*s1*s2], [rho*s1*s2, s2^2]]\np(theta) = w*N_2(theta; mu_minus, S) + (1-w)*N_2(theta; mu_plus, S)\n\nFor coordinate j and held coordinate k:\nq = P(population 1 | theta_k)\n  = w*N(theta_k; mu_minus[k], s_k^2) /\n    [w*N(theta_k; mu_minus[k], s_k^2) + (1-w)*N(theta_k; mu_plus[k], s_k^2)]\nm[j,c] = mu_c[j] + rho*s_j/s_k*(theta_k-mu_c[k])\nv_j = s_j^2*(1-rho^2)\n\ntheta_j | theta_k ~ q*N(m[j,minus], v_j) + (1-q)*N(m[j,plus], v_j)"),
+        p("For each coordinate draw, choose a population using q and then draw from its Gaussian conditional. ",
+          "Recompute q using the newly available conditioning coordinate at the next update. ",
+          "These conditional weights generally differ from the global weight w."),
+        p("At zero separation the target reduces to one Gaussian. Unequal weights move the overall target mean away from the midpoint. ",
+          "Separated populations can mix extremely slowly; burn-in and within-population autocorrelation alone cannot certify convergence.")
+      ))
+    }
     if (input$family == "poisson") {
       return(tagList(
         p("A genuine hierarchical posterior: n independent unit-exposure counts with total S. All Gamma parameters use rates, not scales."),
