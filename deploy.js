@@ -60,7 +60,7 @@ function gallery() {
   const sections = groups.map(group => {
     const cards = tools.filter(tool => tool.group === group).map((tool, i) => `
       <article class="card">
-        <span class="eyebrow">`AstroInformatics Demonstration / ${String(i + 1).padStart(2, "0")}`</span>
+        <span class="eyebrow">"AstroInformatics Demonstration / ${String(i + 1).padStart(2, "0")}"</span>
         <h3><a href="${tool.path}/">${escape(tool.title)}</a></h3>
         <p>${escape(tool.description)}</p>
         <div class="card-links">
