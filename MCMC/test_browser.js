@@ -1,8 +1,6 @@
 'use strict';
 const assert = require('node:assert/strict');
 const { setTimeout: sleep } = require('node:timers/promises');
-const { mkdir, rmdir } = require('node:fs/promises');
-const path = require('node:path');
 const { runBrowser } = require('../TeachingTools/browser_test.js');
 
 async function suite(b) {
@@ -113,20 +111,4 @@ async function suite(b) {
   await b.click('finish');
   await b.screenshot('mcmc-desktop.png');
 }
-async function main() {
-  const profileRoot = path.join(__dirname, '.browser-test');
-  const created = await mkdir(profileRoot, { recursive: true });
-  const previous = process.env.TMPDIR;
-  process.env.TMPDIR = profileRoot;
-  try {
-    await runBrowser('MCMC', suite);
-  } finally {
-    if (previous === undefined) delete process.env.TMPDIR;
-    else process.env.TMPDIR = previous;
-    if (created) {
-      try { await rmdir(profileRoot); }
-      catch (error) { if (error.code !== 'ENOTEMPTY' && error.code !== 'ENOENT') throw error; }
-    }
-  }
-}
-main().catch(error => { console.error(error); process.exitCode = 1; });
+runBrowser('MCMC', suite).catch(error => { console.error(error); process.exitCode = 1; });
