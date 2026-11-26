@@ -130,8 +130,8 @@
         "x (pixels)", "Intensity");
       profile.clip();
       U.line(profile, observed.map((value, i) => [i, value]), "#8f9bab", 1);
-      U.line(profile, truth.map((value, i) => [i, value]), "#087f8c", 2.5, [6, 4]);
       U.line(profile, recovered.map((value, i) => [i, value]), "#5059a6", 2);
+      U.line(profile, truth.map((value, i) => [i, value]), "#087f8c", 2.5, [6, 4]);
       profile.ctx.restore();
       U.$("profile-note").textContent = `Row y = ${p.row}. Whole-image RMSE versus noiseless input: observed ${number(s.rawRmse)}, reconstructed ${number(s.filteredRmse)}.`;
       const radius = Math.hypot(p.mode_x, p.mode_y);

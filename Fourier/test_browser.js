@@ -7,6 +7,11 @@ runLessonBrowser("Fourier", async b => {
   assert.ok(await b.evaluate("lesson.result.full.signalToNoise < 0.11 && lesson.result.full.filteredRmse < 0.15"));
   assert.ok(await b.hasColour("profile-plot", [8, 127, 140]));
   assert.ok(await b.hasColour("profile-plot", [80, 89, 166]));
+  await b.change("noise", 0);
+  assert.ok(await b.evaluate("lesson.result.full.image.every((x,i) => Math.abs(x - lesson.result.full.reconstructed[i]) < 1e-12)"));
+  assert.ok(await b.hasColour("profile-plot", [8, 127, 140]));
+  assert.ok(await b.hasColour("profile-plot", [80, 89, 166]));
+  await b.click("reset");
   await b.evaluate("window.originalNoise = lesson.result.data; window.originalImage = lesson.result.full.image.slice()");
   for (const display of ["power", "phase", "logpower"]) {
     await b.change("spectrum", display); await b.healthy();
