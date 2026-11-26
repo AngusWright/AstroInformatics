@@ -144,6 +144,15 @@
     "static_files": ["index.html", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
   },
   {
+    "path": "Fourier",
+    "title": "Fourier Transform: Finding Structure in Noise",
+    "description": "Reveal coherent spatial patterns hidden in noisy images using the two-dimensional Fourier transform, superposition and frequency filtering.",
+    "lecture": "https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4a_html.html",
+    "section": "Significance of Evidence (Related Lecture)",
+    "group": "Astrostatistics",
+    "static_files": ["index.html", "styles.css", "model.js", "app.js", "../TeachingTools/statistics.js", "../TeachingTools/browser.js", "../TeachingTools/browser.css", "../TeachingTools/lesson.js"]
+  },
+  {
     "path": "CentralLimit",
     "title": "Why Stacking Works (and When It Doesn't)",
     "description": "Explore the central limit theorem: Build distributions of Guassian sample means from non-Gaussian initial samples, and explore a heavy-tailed counterexample.",

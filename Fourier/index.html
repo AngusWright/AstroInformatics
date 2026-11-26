@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Reveal coherent spatial patterns hidden in noisy images using the two-dimensional Fourier transform, superposition and frequency filtering.">
+  <title>Fourier Transform: Finding Structure in Noise</title>
+  <link rel="stylesheet" href="../TeachingTools/browser.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="../TeachingTools/statistics.js" defer></script>
+  <script src="../TeachingTools/browser.js" defer></script>
+  <script src="../TeachingTools/lesson.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to demonstration</a>
+  <header class="masthead">
+    <div><a class="eyebrow" href="../">Astroinformatics / Astrostatistics</a>
+      <h1>Fourier Transform: Finding Structure in Noise</h1>
+      <p>One image, two descriptions. A pattern lost among individual pixels can stand out when those pixels add coherently.</p></div>
+    <a class="lecture-link" href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4a_html.html">Related statistics lecture &rarr;</a>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <details id="settings" open><summary>Image and Fourier settings</summary>
+        <div class="preset-grid" aria-label="Guided examples">
+          <button type="button" data-preset="hidden">Hidden wave</button>
+          <button type="button" data-preset="superposition">Two waves</button>
+          <button type="button" data-preset="gaussian">Gaussian blob</button>
+          <button type="button" data-preset="aperture">Sharp aperture</button>
+          <button type="button" data-preset="sources">Two point sources</button>
+          <button type="button" data-preset="noise">Noise only</button>
+        </div>
+        <form id="controls" novalidate>
+          <label for="noise">Pixel-noise SD <output for="noise"></output></label>
+          <input id="noise" type="range" min="0" max="8" step="0.1" value="4">
+          <p class="hint">Independent Gaussian noise in each of 128 &times; 128 pixels. The same noise field is reused when you change a signal or its strength.</p>
+          <fieldset>
+            <legend>Function A</legend>
+            <label for="family_a">Real-space function</label>
+            <select id="family_a">
+              <option value="wave" selected>Sinusoidal wave</option><option value="gaussian">Gaussian blob</option>
+              <option value="square">Square aperture</option><option value="disk">Circular aperture</option>
+              <option value="point">Single point / pixel</option><option value="none">None</option>
+            </select>
+            <div data-component="a" data-families="wave gaussian square disk point">
+              <label for="amplitude_a">Amplitude <output for="amplitude_a"></output></label>
+              <input id="amplitude_a" type="range" min="0" max="5" step="0.1" value="0.6">
+            </div>
+            <div data-component="a" data-families="wave">
+              <label for="kx_a">k<sub>x</sub> (cycles/image) <output for="kx_a"></output></label>
+              <input id="kx_a" type="range" min="-24" max="24" step="0.25" value="9">
+              <label for="ky_a">k<sub>y</sub> (cycles/image) <output for="ky_a"></output></label>
+              <input id="ky_a" type="range" min="-24" max="24" step="0.25" value="5">
+              <p class="hint">The k-vector points across the stripes, not along them. Fractional k spreads power between bins.</p>
+            </div>
+            <div data-component="a" data-families="gaussian square disk">
+              <label for="width_a">Size (pixels) <output for="width_a"></output></label>
+              <input id="width_a" type="range" min="1" max="32" step="1" value="8">
+              <p class="hint">Gaussian SD, square half-width, or disk radius.</p>
+            </div>
+            <details class="advanced"><summary>Phase and position</summary>
+              <div data-component="a" data-families="wave">
+                <label for="phase_a">Phase (degrees) <output for="phase_a"></output></label>
+                <input id="phase_a" type="range" min="0" max="360" step="5" value="35">
+              </div>
+              <label for="shift_x_a">Circular x-shift (pixels) <output for="shift_x_a"></output></label>
+              <input id="shift_x_a" type="range" min="-32" max="32" step="1" value="0">
+              <label for="shift_y_a">Circular y-shift (pixels) <output for="shift_y_a"></output></label>
+              <input id="shift_y_a" type="range" min="-32" max="32" step="1" value="0">
+            </details>
+          </fieldset>
+          <details class="advanced" id="second-component"><summary>Superpose a second function</summary>
+            <label for="family_b">Function B</label>
+            <select id="family_b">
+              <option value="none" selected>None</option><option value="wave">Sinusoidal wave</option>
+              <option value="gaussian">Gaussian blob</option><option value="square">Square aperture</option>
+              <option value="disk">Circular aperture</option><option value="point">Single point / pixel</option>
+            </select>
+            <div data-component="b" data-families="wave gaussian square disk point">
+              <label for="amplitude_b">Amplitude <output for="amplitude_b"></output></label>
+              <input id="amplitude_b" type="range" min="0" max="5" step="0.1" value="0.7">
+              <label for="shift_x_b">Circular x-shift <output for="shift_x_b"></output></label>
+              <input id="shift_x_b" type="range" min="-32" max="32" step="1" value="0">
+              <label for="shift_y_b">Circular y-shift <output for="shift_y_b"></output></label>
+              <input id="shift_y_b" type="range" min="-32" max="32" step="1" value="0">
+            </div>
+            <div data-component="b" data-families="wave">
+              <label for="kx_b">k<sub>x</sub> (cycles/image) <output for="kx_b"></output></label>
+              <input id="kx_b" type="range" min="-24" max="24" step="0.25" value="-4">
+              <label for="ky_b">k<sub>y</sub> (cycles/image) <output for="ky_b"></output></label>
+              <input id="ky_b" type="range" min="-24" max="24" step="0.25" value="10">
+              <label for="phase_b">Phase (degrees) <output for="phase_b"></output></label>
+              <input id="phase_b" type="range" min="0" max="360" step="5" value="75">
+            </div>
+            <div data-component="b" data-families="gaussian square disk">
+              <label for="width_b">Size (pixels) <output for="width_b"></output></label>
+              <input id="width_b" type="range" min="1" max="32" step="1" value="8">
+              <p class="hint">Gaussian SD, square half-width, or disk radius.</p>
+            </div>
+          </details>
+          <details class="advanced" open><summary>Keep which Fourier modes?</summary>
+            <label for="filter">Inverse-transform filter</label>
+            <select id="filter">
+              <option value="pair" selected>One conjugate pair</option><option value="lowpass">Low pass: broad structure</option>
+              <option value="highpass">High pass: fine structure</option><option value="all">All modes: exact inverse</option>
+            </select>
+            <div class="mode-inputs">
+              <div><label for="mode_x">Selected k<sub>x</sub></label><input id="mode_x" type="number" min="-64" max="63" step="1" value="9"></div>
+              <div><label for="mode_y">Selected k<sub>y</sub></label><input id="mode_y" type="number" min="-64" max="63" step="1" value="5"></div>
+            </div>
+            <p class="hint">Click a Fourier pixel, or enter its integer coordinates here. Its conjugate partner is kept automatically in pair mode.</p>
+            <div id="cutoff-controls" hidden>
+              <label for="cutoff">Radial cutoff (cycles/image) <output for="cutoff"></output></label>
+              <input id="cutoff" type="range" min="0" max="91" step="1" value="12">
+            </div>
+          </details>
+          <details class="advanced"><summary>Display and reproducibility</summary>
+            <label for="spectrum">Fourier colours</label>
+            <select id="spectrum"><option value="logpower">Log power: reveal faint modes</option><option value="power">Linear power</option><option value="phase">Phase (brightness = amplitude)</option></select>
+            <label class="checkbox"><input id="remove_mean" type="checkbox" checked> Subtract image mean (DC)</label>
+            <label for="row">Profile y-pixel <output for="row"></output></label>
+            <input id="row" type="range" min="0" max="127" step="1" value="64">
+            <label for="seed">Random seed</label>
+            <input id="seed" type="number" min="0" max="2147483647" step="1" value="42">
+          </details>
+        </form>
+        <div class="transport"><button id="redraw" type="button">New noise</button><button id="reset" type="button">Reset</button></div>
+      </details>
+      <p class="local-note">A periodic, regularly sampled toy image in arbitrary intensity units. Runs entirely offline: no uploaded image, packages or runtime downloads.</p>
+    </aside>
+    <main id="main">
+      <div class="principle"><strong>The principle</strong>Coherent oscillations concentrate in a few Fourier modes. Independent pixel noise spreads across many. The transform reorganises information; it does not create it.</div>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div class="tabs" role="tablist" aria-label="Demonstration views">
+        <button id="tab-explore" type="button" role="tab" aria-selected="true" aria-controls="panel-explore" tabindex="0">Explore</button>
+        <button id="tab-explain" type="button" role="tab" aria-selected="false" aria-controls="panel-explain" tabindex="-1">Explain</button>
+      </div>
+      <section id="panel-explore" role="tabpanel" aria-labelledby="tab-explore">
+        <div class="transport" aria-label="Fixed-realisation noise animation">
+          <button id="play" class="primary" type="button" aria-pressed="false">Play animation</button>
+          <button id="step" type="button">Step</button><button id="rewind" type="button">Rewind</button><button id="finish" type="button">Full noise</button>
+          <label for="delay">Pace</label><select id="delay"><option value="60">Fast</option><option value="140" selected>Normal</option><option value="300">Slow</option></select>
+        </div>
+        <label for="frame">Grow the same noise field: <span id="frame-label">40 / 40</span></label>
+        <input id="frame" type="range" min="0" max="40" step="1" value="40">
+        <div class="metric-grid" aria-live="polite">
+          <div class="metric">Signal RMS / pixel-noise SD<strong id="pixel-ratio" data-result></strong></div>
+          <div class="metric">Brightest non-DC k-pair<strong id="peak-mode" data-result></strong></div>
+          <div class="metric">Selected-pair amplitude<strong id="mode-amplitude" data-result></strong></div>
+          <div class="metric">Image energy retained<strong id="retained-energy" data-result></strong></div>
+        </div>
+        <div class="plot-grid fourier-grid">
+          <article class="card">
+            <h2><span class="step-number">01</span> Real space: what the detector sees</h2>
+            <canvas id="image-plot" role="img" aria-label="Observed image: superposed real-space functions plus independent Gaussian pixel noise"></canvas>
+            <div class="colour-scale image-scale" aria-hidden="true"></div>
+            <p id="image-scale-note" class="scale-note" data-result></p>
+          </article>
+          <article class="card">
+            <h2><span class="step-number">02</span> Fourier space: look for coherence</h2>
+            <canvas id="spectrum-plot" role="img" aria-label="Centred two-dimensional Fourier spectrum. Click to select a spatial frequency; equivalent keyboard-accessible number controls are in the settings"></canvas>
+            <div id="spectrum-scale" class="colour-scale power-scale" aria-hidden="true"></div>
+            <p id="spectrum-note" class="scale-note" data-result></p>
+            <button id="strongest" type="button">Select brightest non-DC pair</button>
+          </article>
+          <article class="card">
+            <h2><span class="step-number">03</span> Inverse transform: keep selected structure</h2>
+            <canvas id="reconstruction-plot" role="img" aria-label="Real-valued inverse Fourier transform after the selected frequency filter"></canvas>
+            <div class="colour-scale image-scale" aria-hidden="true"></div>
+            <p id="reconstruction-note" class="scale-note" data-result></p>
+          </article>
+          <article class="card">
+            <h2><span class="step-number">04</span> The same row, pixel by pixel</h2>
+            <canvas id="profile-plot" role="img" aria-label="A horizontal image profile comparing observed values, the known noiseless input, and the filtered reconstruction"></canvas>
+            <div class="legend"><span>Grey: observed</span><span class="green">Teal dashed: noiseless input</span><span class="purple">Purple: reconstruction</span></div>
+            <p id="profile-note" class="hint" data-result></p>
+          </article>
+        </div>
+        <p id="mode-note" class="notice" data-result></p>
+        <p class="hint">Each image has its own labelled contrast. Contrast limits stay fixed during playback. A bright Fourier spot is not automatically a detection: <a href="../MultipleTesting/">searching many modes also finds noise peaks</a>.</p>
+      </section>
+      <section id="panel-explain" class="explanation" role="tabpanel" aria-labelledby="tab-explain" hidden>
+        <h2>Start with a pattern you cannot see</h2>
+        <ol>
+          <li>Choose <strong>Hidden wave</strong>. The signal amplitude is 0.6, but each pixel has noise SD 4. Look for the two bright spots near (&plusmn;9, &plusmn;5).</li>
+          <li>Click a spot, or choose <strong>Select brightest non-DC pair</strong>. Keeping just that conjugate pair reconstructs a wave even though the original image looks like noise. Noise in those modes remains.</li>
+          <li>Rewind, then play. Only the strength of the <em>same</em> noise field grows. Change k<sub>x</sub> or k<sub>y</sub>: the spots move, and the stripes change spacing or direction.</li>
+          <li>Choose <strong>Two waves</strong>. Click each pair in turn to separate the two patterns. Set Function B to match Function A, then change its phase: amplitudes can reinforce or cancel.</li>
+          <li>Try a <strong>Gaussian blob</strong> and vary its size: a narrower feature needs a wider range of frequencies. Compare square and circular apertures, a point, and two points.</li>
+          <li>Choose <strong>Noise only</strong>. There is still a brightest pair. Repeat with new noise: its location changes. Peak picking alone does not establish a physical signal.</li>
+        </ol>
+        <h2>What is a k-mode?</h2>
+        <p>A mode is a sinusoidal pattern with wave vector (k<sub>x</sub>, k<sub>y</sub>). Here k is measured in <strong>cycles across the whole image</strong>, not radians per pixel. Its perpendicular wavelength is 128 / &radic;(k<sub>x</sub><sup>2</sup> + k<sub>y</sub><sup>2</sup>) pixels. The stripes run perpendicular to the k-vector. A cosine at an integer k occupies a positive and a negative frequency; they are two halves of one real pattern, not two independent detections.</p>
+        <h2>A complex coefficient records amplitude and phase</h2>
+        <pre>F(kx, ky) = (1/N&sup2;) &Sigma;x &Sigma;y I(x, y) exp[-2&pi;i(kx x + ky y)/N]
+I(x, y)  = &Sigma;kx &Sigma;ky F(kx, ky) exp[+2&pi;i(kx x + ky y)/N]
+N = 128; power = |F|&sup2;; phase = arg(F)</pre>
+        <p>There is no information loss when all complex coefficients are retained. The Fourier image is centred on the zero-frequency <strong>DC</strong> mode, which equals the image mean. Mean subtraction removes only DC. For real images F(&minus;k) = F(k)*; pair filtering preserves this symmetry, so the inverse stays real. The reported cosine amplitude is 2|F|, except for DC and self-conjugate Nyquist modes, where it is |F|.</p>
+        <p>Phase changes where a wave lies without changing its individual power. Circularly shifting an <em>entire image</em> changes Fourier phase, not power; use a noise-free, single-function example to test this with the position controls. Shifting only one component relative to another, or to fixed noise, can change their interference. The phase display uses colour for angle and brightness for amplitude; phase where amplitude is negligible is not meaningful. Two superposed signals add as <em>complex coefficients</em>, so their powers do not generally add: overlapping modes interfere.</p>
+        <h2>Why the hidden wave survives</h2>
+        <p>The transform sums each pixel against a matching wave. A matching signal adds coherently; independent, zero-mean Gaussian noise partly cancels. With N<sup>2</sup> pixels and noise SD &sigma;, the expected noise power in each unremoved Fourier bin is &sigma;<sup>2</sup>/N<sup>2</sup>. For an ordinary non-self-conjugate mode the noise SD in each fitted cosine/sine amplitude is &radic;2 &sigma;/N. No extra information has appeared: this is an efficient representation of the same pixels.</p>
+        <p>A single noise realisation has a mottled spectrum, not a perfectly flat one. Conjugate bins are dependent, and searching many possible frequencies increases the chance of a large noise peak. The displayed peak, amplitude and retained-energy fraction are descriptive diagnostics, <strong>not p-values or posterior detection probabilities</strong>. Coloured or correlated noise can itself make structured Fourier features; only independent white noise is simulated here.</p>
+        <h2>Shapes, edges and sampling</h2>
+        <p>A well-contained Gaussian has a Gaussian-like transform: compact spatial features have broad Fourier support. A square aperture gives a separable sinc-like pattern; a circular aperture gives circular, Bessel-like rings. A single pixel has flat power, and two pixels give interference fringes. These are <em>discretely sampled</em> functions, not exact continuous optical diffraction calculations; a broad Gaussian truncated by the image boundary need not have an exactly Gaussian spectrum.</p>
+        <p>The discrete transform treats the image as one tile of a periodic field. Integer wave frequencies join across the boundaries. Fractional frequencies do not, so their discontinuities spread power into neighbouring bins (<strong>spectral leakage</strong>). No taper or zero padding is applied. Spatial frequencies run from &minus;64 to 63 cycles/image on each axis; the Nyquist boundary is the sampling limit, not a new independent negative/positive pair.</p>
+        <p>Size means Gaussian SD, disk radius, or square half-width; square boundary pixels are included, giving side length 2 &times; size + 1. Point sources occupy one pixel. Position controls circularly translate the sampled array, wrapping at the edge. Sharp low/high-pass cutoffs can introduce ringing. Selecting one mode discards all other structure and cannot remove noise at that same mode.</p>
+        <h2>Reading the displays honestly</h2>
+        <p>Real-space colours are linear and diverge about zero. The observation and reconstruction have separate, labelled ranges; the filtered image is <em>not</em> shown at the noisy image's much wider contrast. Neither range changes during playback. Log-power colours span five decades relative to a fixed reference P<sub>ref</sub>, using log<sub>10</sub>(1 + 10<sup>5</sup>P/P<sub>ref</sub>)/log<sub>10</sub>(1 + 10<sup>5</sup>); this changes the display only, not the transform. Linear power and amplitude-weighted phase are also available.</p>
+        <p>By this normalization, &Sigma;|F|<sup>2</sup> equals the mean squared image intensity (Parseval's theorem). The retained-energy fraction includes DC unless mean subtraction is enabled; it is not the fraction of true signal recovered. The profile also reports reconstruction error against the known, mean-adjusted input, which is available only because this is a simulation. An all-zero image has no defined energy fraction.</p>
+        <p>New noise changes the local seeded realisation; Reset restores the defaults. Changing functions, filters, phase, display or playback never resamples the noise. Playback scales one fixed noise field; it is not repeated observations or a growing exposure.</p>
+        <p>This signal-processing lesson extends the gallery. The <a href="https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4a_html.html">related course lecture discusses significance of evidence</a>, not a Fourier-transform derivation. For transform conventions and sampling, see the <a href="https://numpy.org/doc/stable/reference/routines.fft.html">Fourier-transform reference</a>. No NumPy or other external library is used by this page.</p>
+      </section>
+      <noscript><p class="error">Enable JavaScript to run this local demonstration.</p></noscript>
+      <footer>Browser-native 2D FFT &middot; <a href="../">All demonstrations</a> &middot; No Shiny, WebR or runtime downloads.</footer>
+    </main>
+  </div>
+</body>
+</html>

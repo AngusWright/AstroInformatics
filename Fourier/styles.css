@@ -1,0 +1,22 @@
+.preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 16px; }
+.preset-grid button { font-size: .78rem; padding: 8px; }
+.mode-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mode-inputs > div { min-width: 0; }
+.mode-inputs input { min-width: 0; }
+#frame { width: 100%; accent-color: #405b99; }
+.step-number { color: #087f8c; font-variant-numeric: tabular-nums; margin-right: 7px; }
+.fourier-grid .card { padding: 18px 12px; }
+.fourier-grid canvas { height: 350px; }
+#spectrum-plot { cursor: crosshair; touch-action: manipulation; }
+.colour-scale { height: 7px; margin: 8px 26px 0 56px; border-radius: 6px; }
+.image-scale { background: linear-gradient(90deg, #265887, #f8f9fa, #cc592c); }
+.power-scale { background: linear-gradient(90deg, #132037, #423d7d, #1c9299, #facb5f, #fff7da); }
+.phase-scale { background: linear-gradient(90deg, #d92626, #d9d926, #26d926, #26d9d9, #2626d9, #d926d9, #d92626); }
+.scale-note { margin: 7px 12px 0; color: var(--muted); font-size: .77rem; text-align: center; }
+#strongest { display: block; margin: 12px auto 0; font-size: .8rem; }
+.purple { color: #5059a6; }
+.fourier-grid .legend { justify-content: center; }
+@media (max-width: 800px) {
+  .fourier-grid canvas { height: 320px; }
+  .metric strong { font-size: 1.15rem; }
+}

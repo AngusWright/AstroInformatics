@@ -5,7 +5,7 @@ Browser-native tools
 statistics.js supplies dependency-free probability functions and seeded draws.
 browser.js and browser.css supply the shared Canvas and responsive interface.
 Gibbs retains its own drawing helpers and styles.
-lesson.js supplies the sixteen lesson ports with shared controls, accessible tabs,
+lesson.js supplies the native lessons with shared controls, accessible tabs,
 input errors, reproducible realizations, mobile settings and cached playback.
 Animation reveals an existing simulation; it never redraws random observations.
 statistics.js also supplies R-type-7 sample quantiles and histograms that retain
@@ -13,7 +13,7 @@ the probability mass of observations outside the displayed bin range.
 
 html-tools.json is the authoritative catalogue for the published HTML tools,
 their gallery order, lecture references, and explicit runtime assets.
-All twenty tools are native HTML. deploy.js builds a clean _site/ with no R,
+All registered tools are native HTML. deploy.js builds a clean _site/ with no R,
 Shiny, WebR or editor payloads.
 GitHub Actions publishes only that artifact, not the historical docs/ exports.
 
@@ -36,8 +36,9 @@ R/Shiny reference lessons
 All original R implementations are retained as references, but are not published
 by the HTML workflow. apps.R reads the same html-tools.json catalogue. Its shared
 flag refers only to the sixteen R references that use teaching.R, not the native
-HTML runtime. JavaScript and R use different random generators, so equal seeds
-do not imply identical simulated datasets.
+HTML runtime; new HTML-only lessons need no R reference. JavaScript and R use
+different random generators, so equal seeds do not imply identical simulated
+datasets.
 
 teaching.R supplies their visual shell, reproducible random-number scope,
 preset handling, and paused-by-default animation controls. Local apps source

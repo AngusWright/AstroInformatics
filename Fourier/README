@@ -1,0 +1,75 @@
+Fourier Transform: Finding Structure in Noise
+============================================
+
+Group: Astrostatistics
+
+Open index.html directly, or serve this directory beside TeachingTools. This is
+a native HTML/Canvas/JavaScript lesson with no R, Shiny, WebR, CDN or packages.
+
+The default image contains a cosine of amplitude 0.6 at k=(9,5), hidden beneath
+independent Gaussian pixel noise of SD 4. A 128 by 128 Fourier transform reveals
+its conjugate peaks. Clicking a Fourier pixel, entering its coordinates, or
+selecting the brightest non-DC pair reconstructs that spatial mode. Noise at
+the selected frequencies remains; the brightest pair is not a detection test.
+
+Two independently configurable functions can be superposed: sinusoids,
+Gaussian blobs, square/circular apertures and single pixels. Controls include
+amplitude, wave vector, phase, size and integer-pixel circular position shifts.
+Presets demonstrate a hidden wave, two waves, a Gaussian, aperture ringing,
+two-source interference fringes and noise alone. Fractional wave frequencies
+demonstrate spectral leakage. Log/linear power and amplitude-weighted phase
+are available. Low/high-pass filters and the exact all-modes inverse provide
+comparisons to single-pair filtering. A row profile compares the observation,
+known noiseless input and reconstruction.
+
+Normalization and limitations
+-----------------------------
+F(k) = sum I(x) exp(-2 pi i k.x/N) / N^2; inverse = sum F(k) exp(+2 pi i k.x/N).
+Power is |F|^2; sum(power) equals mean(image^2). Frequencies are cycles/image,
+not angular wavenumbers. Noise power per unremoved bin has expectation
+sigma^2/N^2. The ordinary conjugate-pair cosine amplitude is 2|F|; DC and
+self-conjugate Nyquist modes use |F|. Mean subtraction removes only DC.
+Masks preserve Hermitian symmetry, including Nyquist edges.
+
+These are discrete sampled, periodically continued images, not continuous
+optical diffraction calculations. Gaussian size is SD; disk size is radius;
+square size is half-width, including boundaries (side = 2*size+1 pixels).
+All shifts wrap at image boundaries. No window taper or zero padding is used.
+The images have separately labelled linear contrast limits, fixed throughout
+playback. Log power uses log10(1+1e5*P/Pref)/log10(1+1e5); it changes only the
+display. An all-zero image has no defined retained-energy fraction.
+
+Noise is cached by seed; function/filter/display changes reuse it. Playback
+linearly increases the strength of the same noise field, not the number of
+observations. Signal/noise transforms and their filtered inverses are cached,
+so animation needs no further FFTs. New noise advances the shared lesson's
+seed generation; Reset reproduces the default realisation.
+
+The related course lecture covers significance rather than a Fourier
+derivation:
+https://anguswright.github.io/LectureNotes/IntroductionToStatistics_Section4a_html.html
+Transform/sampling reference:
+https://numpy.org/doc/stable/reference/routines.fft.html
+
+Numerical API and checks
+------------------------
+model.js is CommonJS or browser global FourierModel. Exports:
+SIZE, PIXELS, STEPS, defaults, families, validate, prepare(seed),
+transform2d(real, imaginary=null, inverse=false), indexOf, conjugateIndex,
+frequency, compute(parameters, optionalPreparedNoise), atFrame(result, frame).
+transform2d supports square power-of-two grids from 2 to 128; model images
+always use 128. It returns new Float64Array real/imaginary grids.
+compute returns the cached model and full-noise state; atFrame returns image,
+complex coefficients, power, reconstruction and diagnostics without resampling.
+Expected input errors use Astro.ValidationError.
+
+From the repository root with Node 22+ (Chrome for browser checks):
+  node --test Fourier/test_model.js
+  node Fourier/test_browser.js
+
+Tests compare the FFT to an independent direct complex DFT, verify its inverse
+and Parseval identity, analytic wave/point/Gaussian coefficients, phase shifts,
+interference, real-valued symmetric filters, DC/Nyquist normalization, leakage,
+hidden-mode recovery, zero images, reproducibility and invalid inputs.
+Browser checks exercise all families, actual Fourier-canvas picking, display
+and filter changes, animation, reset/errors, responsive layout and offline use.

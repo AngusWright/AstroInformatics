@@ -37,6 +37,12 @@ These pages run entirely in the browser without Shiny, WebR, or runtime download
 [Uncertain Encounters, Many Possible Galaxies](ForwardModelling/) - uncertain inputs
 in a restricted tidal-encounter model; not a self-consistent N-body calculation.
 
+### Fourier-space companion
+
+[Fourier Transform: Finding Structure in Noise](Fourier/) - reveal coherent
+spatial modes in noisy images, superpose patterns, and reconstruct selected
+frequencies with a native two-dimensional FFT.
+
 ### Further foundations
 
 1. [Correlations That Disappear](Correlation/) - confounding and conditioning.
@@ -47,7 +53,7 @@ in a restricted tidal-encounter model; not a self-consistent N-body calculation.
 6. [One Bad Star](RobustStatistics/) - robust statistics.
 7. [Can You Trust That Bump?](DensityEstimation/) - histograms and KDEs.
 
-All twenty tools are published as native HTML. The original R/Shiny implementations
+All tools are published as native HTML. The original R/Shiny implementations
 remain in the repository as numerical references, registered in
 [apps.R](https://github.com/AngusWright/Astroinformatics/blob/main/apps.R).
 R source and runtime files are not included in the published site.

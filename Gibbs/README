@@ -57,7 +57,7 @@ Build the HTML tools for GitHub Pages:
 The html-tools.json manifest copies index.html, styles.css, gibbs.js, and
 app.js into _site/Gibbs, and statistics.js into _site/TeachingTools.
 The clean Pages artifact contains only native HTML tools and shared assets.
-All twenty tools are native HTML; their R references are not published.
+All registered tools are native HTML; retained R references are not published.
 
 The previous app.R and gibbs.R are retained as an R/Shiny numerical reference,
 not loaded by the HTML tool or copied into its Pages directory. Their existing

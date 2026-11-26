@@ -35,7 +35,7 @@ Build the HTML tools for GitHub Pages:
 
 html-tools.json lists the published tools and explicit local/shared assets.
 The clean _site/ artifact contains no R payloads, editor pages, or Shiny/WebR
-runtime. All twenty tools are now native HTML; R implementations remain reference
+runtime. All registered tools are native HTML; R implementations remain reference
 source and are not published.
 
 Teaching reference:
